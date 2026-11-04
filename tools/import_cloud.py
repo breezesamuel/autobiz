@@ -1,0 +1,29 @@
+"""把云端工作流回写的 leads_export.json 并入本地 SQLite（按 uid 去重）。"""
+import json
+import subprocess
+import sys
+import time
+
+sys.path.insert(0, ".")
+from autobiz.db import upsert_lead  # noqa: E402
+
+rev = sys.argv[1] if len(sys.argv) > 1 else "157934e"
+raw = subprocess.run(
+    ["C:/Program Files/Git/cmd/git.exe", "show", f"{rev}:data/leads_export.json"],
+    capture_output=True, cwd=".",
+).stdout
+data = json.loads(raw.decode("utf-8"))
+leads = data.get("leads", []) if isinstance(data, dict) else data
+
+added = 0
+for L in leads:
+    uid = L.get("uid")
+    if not uid:
+        continue
+    try:
+        r = upsert_lead(L)
+        if r:
+            added += 1
+    except Exception as e:
+        print("skip", uid, e)
+print(f"cloud leads={len(leads)}, newly added={added}")
