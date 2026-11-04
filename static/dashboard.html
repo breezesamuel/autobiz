@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AutoBiz · 自动赚钱系统控制台</title>
+<style>
+  :root{
+    --bg:#0b0f14; --panel:#121821; --panel2:#1a2330; --line:#243041;
+    --txt:#e6edf5; --sub:#8b9bb0; --acc:#2ee59d; --acc2:#4da3ff; --warn:#ffb454; --bad:#ff6b6b;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--txt);
+    font:14px/1.6 -apple-system,"Segoe UI","Microsoft YaHei",sans-serif}
+  header{display:flex;align-items:center;gap:14px;padding:16px 24px;
+    border-bottom:1px solid var(--line);background:linear-gradient(180deg,#101722,#0b0f14)}
+  header h1{margin:0;font-size:18px;letter-spacing:.5px}
+  header h1 span{color:var(--acc)}
+  .pill{font-size:12px;padding:3px 10px;border-radius:20px;background:var(--panel2);
+    color:var(--sub);border:1px solid var(--line)}
+  .pill.ok{color:var(--acc);border-color:#1d5c44}
+  .pill.bad{color:var(--bad);border-color:#5c2a2a}
+  main{padding:20px 24px;max-width:1400px;margin:0 auto}
+  .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px}
+  .kpi{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px 16px}
+  .kpi .v{font-size:26px;font-weight:700;color:var(--acc)}
+  .kpi .v.blue{color:var(--acc2)} .kpi .v.warn{color:var(--warn)}
+  .kpi .k{font-size:12px;color:var(--sub);margin-top:2px}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:16px}
+  @media(max-width:900px){.grid{grid-template-columns:1fr}}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px}
+  .card h3{margin:0 0 10px;font-size:14px;color:var(--sub);font-weight:600;
+    text-transform:uppercase;letter-spacing:1px}
+  .bar{display:flex;align-items:center;gap:8px;margin:6px 0;font-size:13px}
+  .bar .name{width:110px;color:var(--sub);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .bar .track{flex:1;background:var(--panel2);border-radius:6px;height:14px;overflow:hidden}
+  .bar .fill{height:100%;background:linear-gradient(90deg,#2ee59d,#4da3ff);border-radius:6px}
+  .bar .n{width:44px;text-align:right;color:var(--txt)}
+  table{width:100%;border-collapse:collapse;font-size:13px}
+  th,td{text-align:left;padding:7px 8px;border-bottom:1px solid var(--line)}
+  th{color:var(--sub);font-weight:600;font-size:12px}
+  tr:hover td{background:#16202c}
+  .score{display:inline-block;min-width:34px;text-align:center;padding:1px 7px;
+    border-radius:10px;font-weight:700;font-size:12px}
+  .s-hi{background:#123d2e;color:#2ee59d} .s-mid{background:#3d3412;color:#ffb454}
+  .s-lo{background:#232b36;color:#8b9bb0}
+  .st{font-size:11px;padding:2px 8px;border-radius:10px;border:1px solid var(--line);color:var(--sub)}
+  .st.shortlisted{color:var(--acc2);border-color:#1f4a75}
+  .st.proposed,.st.sent{color:var(--warn);border-color:#6b4a1f}
+  .st.won{color:var(--acc);border-color:#1d5c44}
+  .st.excluded{color:#5b6675}
+  a{color:var(--acc2);text-decoration:none}
+  a:hover{text-decoration:underline}
+  .toolbar{display:flex;gap:8px;flex-wrap:wrap;margin:14px 0 10px}
+  .toolbar button{background:var(--panel2);color:var(--sub);border:1px solid var(--line);
+    padding:6px 14px;border-radius:8px;cursor:pointer;font-size:13px}
+  .toolbar button.on{background:#123d2e;color:var(--acc);border-color:#1d5c44}
+  .toolbar input{background:var(--panel2);border:1px solid var(--line);color:var(--txt);
+    padding:6px 12px;border-radius:8px;width:220px;font-size:13px}
+  .modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.72);z-index:9;
+    align-items:center;justify-content:center;padding:24px}
+  .modal.show{display:flex}
+  .modal .box{background:var(--panel);border:1px solid var(--line);border-radius:14px;
+    max-width:820px;width:100%;max-height:86vh;overflow:auto;padding:22px}
+  .modal h2{margin:0 0 6px;font-size:17px}
+  .modal .meta{color:var(--sub);font-size:12px;margin-bottom:14px}
+  .prop{white-space:pre-wrap;background:#0d131b;border:1px solid var(--line);
+    border-radius:10px;padding:14px;font-size:13px;margin:8px 0}
+  .btns{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+  .btns button{padding:8px 16px;border-radius:8px;border:1px solid var(--line);
+    background:var(--panel2);color:var(--txt);cursor:pointer;font-size:13px}
+  .btns button.primary{background:#123d2e;color:var(--acc);border-color:#1d5c44}
+  .btns button.danger{color:var(--bad);border-color:#5c2a2a}
+  .reasons{font-size:12px;color:var(--sub);margin-top:6px}
+  footer{padding:18px 24px;color:#5b6675;font-size:12px;text-align:center}
+  .pay{display:flex;justify-content:space-between;padding:8px 0;
+    border-bottom:1px dashed var(--line);font-size:13px}
+  .pay b.ok{color:var(--acc)} .pay b.bad{color:var(--bad)}
+  .payform{display:flex;gap:8px;margin-top:12px}
+  .payform input{background:var(--panel2);border:1px solid var(--line);color:var(--txt);
+    padding:7px 10px;border-radius:8px;width:110px}
+  .payform input.wide{flex:1;width:auto}
+  .payform button{background:#123d2e;color:var(--acc);border:1px solid #1d5c44;
+    padding:7px 14px;border-radius:8px;cursor:pointer}
+  #linkout{font-size:12px;color:var(--acc2);word-break:break-all;margin-top:8px;display:none}
+</style>
+</head>
+<body>
+<header>
+  <h1>Auto<span>Biz</span> · 自动赚钱系统控制台</h1>
+  <span class="pill" id="clock">--:--</span>
+  <span class="pill" id="runpill">运行 --</span>
+  <span class="pill" id="paypill">收款检测中…</span>
+</header>
+<main>
+  <div class="kpis" id="kpis"></div>
+
+  <div class="grid">
+    <div class="card"><h3>渠道分布</h3><div id="sources"></div></div>
+    <div class="card"><h3>收款通道</h3><div id="payments"></div>
+      <div class="payform">
+        <input id="amt" type="number" step="0.01" placeholder="金额 USD" value="99">
+        <input id="pemail" placeholder="客户邮箱（发票轨道）" style="width:170px">
+        <input id="desc" class="wide" placeholder="描述（交付物）" value="Python scraper delivery">
+        <button onclick="mkLink()">生成收款请求</button>
+      </div>
+      <div id="linkout"></div>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top:14px">
+    <h3>线索管道</h3>
+    <div class="toolbar">
+      <button class="on" data-st="" onclick="filt(this)">全部</button>
+      <button data-st="shortlisted" onclick="filt(this)">短名单</button>
+      <button data-st="proposed" onclick="filt(this)">提案就绪</button>
+      <button data-st="sent" onclick="filt(this)">已发送</button>
+      <button data-st="won" onclick="filt(this)">已赢单</button>
+      <input id="q" placeholder="搜索标题/描述…" oninput="loadLeads()">
+      <input id="ms" type="number" placeholder="最低分" style="width:90px" oninput="loadLeads()">
+    </div>
+    <div style="overflow-x:auto">
+      <table>
+        <thead><tr><th>评分</th><th>需求</th><th>渠道</th><th>预算</th><th>状态</th><th>操作</th></tr></thead>
+        <tbody id="rows"><tr><td colspan="6">加载中…</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="grid" style="margin-top:14px">
+    <div class="card"><h3>最近运行</h3>
+      <table><thead><tr><th>时间</th><th>阶段</th><th>获取</th><th>新增</th><th>异常</th></tr></thead>
+      <tbody id="runs"></tbody></table>
+    </div>
+    <div class="card"><h3>收入账本</h3>
+      <div id="revenue" style="font-size:13px">—</div>
+      <div class="payform">
+        <input id="ramt" type="number" step="0.01" placeholder="金额">
+        <input id="rnote" class="wide" placeholder="备注（客户/订单）">
+        <button onclick="addRev()">入账</button>
+      </div>
+    </div>
+  </div>
+</main>
+
+<div class="modal" id="modal" onclick="if(event.target===this)closeModal()">
+  <div class="box">
+    <h2 id="mTitle">—</h2>
+    <div class="meta" id="mMeta"></div>
+    <div class="reasons" id="mReasons"></div>
+    <div style="margin-top:14px"><b style="font-size:13px;color:var(--sub)">提案草稿</b></div>
+    <div class="prop" id="mProp">（无）</div>
+    <div class="btns">
+      <button class="primary" onclick="setStatus('sent')">标记已发送</button>
+      <button onclick="setStatus('won')">标记赢单</button>
+      <button onclick="setStatus('lost')">标记丢失</button>
+      <button onclick="copyProp()">复制提案</button>
+      <button class="danger" onclick="closeModal()">关闭</button>
+    </div>
+  </div>
+</div>
+
+<footer>AutoBiz · 数据存于本地 SQLite · 24/7 daemon 循环驱动 · 密钥仅存 .env（不入 git）</footer>
+
+<script>
+let curStatus = "", curId = null, curProp = "";
+
+function cls(s){ return 'score ' + (s>=60?'s-hi':s>=35?'s-mid':'s-lo'); }
+function stCls(s){ return 'st ' + s; }
+
+async function j(url, opt){ const r = await fetch(url, opt); return r.json(); }
+
+async function loadSummary(){
+  const d = await j('/api/summary');
+  const s = d.summary;
+  document.getElementById('kpis').innerHTML = `
+    <div class="kpi"><div class="v">${s.total_leads}</div><div class="k">累计线索</div></div>
+    <div class="kpi"><div class="v blue">${s.shortlisted}</div><div class="k">短名单</div></div>
+    <div class="kpi"><div class="v blue">${s.proposed}</div><div class="k">提案就绪</div></div>
+    <div class="kpi"><div class="v warn">${s.proposals_generated}</div><div class="k">提案累计</div></div>
+    <div class="kpi"><div class="v">$${Math.round(s.budget_sum_usd).toLocaleString()}</div><div class="k">线索预算总值</div></div>
+    <div class="kpi"><div class="v">${s.runs}</div><div class="k">运行轮次</div></div>`;
+  const src = s.by_source || {};
+  const max = Math.max(1, ...Object.values(src));
+  document.getElementById('sources').innerHTML = Object.entries(src)
+    .map(([k,v]) => `<div class="bar"><div class="name">${k}</div>
+      <div class="track"><div class="fill" style="width:${v/max*100}%"></div></div>
+      <div class="n">${v}</div></div>`).join('') || '<div style="color:var(--sub)">暂无数据</div>';
+
+  const p = d.payments, pp = p.paypal, mp = p.moltspay;
+  document.getElementById('payments').innerHTML = `
+    <div class="pay"><span>PayPal (${pp.mode||'-'})</span>
+      <b class="${pp.ok?'ok':'bad'}">${pp.ok?'✅ token 验证通过':'❌ '+(pp.error||'').slice(0,60)}</b></div>
+    <div class="pay"><span>MoltsPay (x402/支付宝/微信)</span>
+      <b class="${mp.configured?'ok':'bad'}">${mp.configured?'✅ 已配置'+(mp.key_format_ok?'（格式正确）':'（格式待核）'):'❌ 未配置'}</b></div>
+    <div class="pay"><span>MoltsPay 服务目录</span>
+      <b class="${mp.connectivity&&mp.connectivity.ok?'ok':'bad'}">${mp.connectivity&&mp.connectivity.ok?'✅ 连通 ('+mp.connectivity.services_listed+' 服务)':'⚠️ '+(mp.connectivity&&mp.connectivity.error||'')}</b></div>
+    <div class="pay"><span>数字产品货架</span><b>${mp.manifest?mp.manifest:'—'}</b></div>`;
+  document.getElementById('paypill').textContent = pp.ok ? '收款通道在线' : '收款待验证';
+  document.getElementById('paypill').className = 'pill ' + (pp.ok?'ok':'bad');
+
+  const runs = d.runs || [];
+  document.getElementById('runpill').textContent = '运行 ' + runs.length + ' 轮';
+  document.getElementById('runs').innerHTML = runs.map(r=>`<tr>
+    <td>${(r.started_at||'').replace('T',' ').replace('Z','')}</td>
+    <td>${r.phase}</td><td>${r.found}</td><td>${r.new}</td>
+    <td style="color:var(--warn)">${(JSON.parse(r.errors||'[]')||[]).length}</td></tr>`).join('');
+
+  const rev = s.revenue_pipeline;
+  document.getElementById('revenue').innerHTML =
+    `确认收入: <b style="color:var(--acc)">$${(s.revenue_confirmed||0).toLocaleString()}</b> ·
+     含待确认: $${(rev||0).toLocaleString()}`;
+}
+
+async function loadLeads(){
+  const st = curStatus ? '&status='+curStatus : '';
+  const q = encodeURIComponent(document.getElementById('q').value||'');
+  const ms = document.getElementById('ms').value||0;
+  const d = await j(`/api/leads?${st}&q=${q}&min_score=${ms}&limit=120`);
+  document.getElementById('rows').innerHTML = d.leads.map(l=>`
+    <tr>
+      <td><span class="${cls(l.score)}">${l.score}</span></td>
+      <td><a href="${l.url}" target="_blank" rel="noopener">${(l.title||'(无标题)').slice(0,80)}</a></td>
+      <td>${l.source}</td>
+      <td>${l.budget_max?('$'+l.budget_max+(l.currency&&l.currency!=='USD'?' '+l.currency:'')):'—'}</td>
+      <td><span class="${stCls(l.status)}">${l.status}</span></td>
+      <td><a href="javascript:void(0)" onclick="openLead(${l.id})">查看/提案</a></td>
+    </tr>`).join('') || '<tr><td colspan="6" style="color:var(--sub)">没有匹配的线索</td></tr>';
+}
+
+function filt(btn){
+  document.querySelectorAll('.toolbar button').forEach(b=>b.classList.remove('on'));
+  btn.classList.add('on'); curStatus = btn.dataset.st; loadLeads();
+}
+
+async function openLead(id){
+  curId = id;
+  const d = await j('/api/lead/'+id);
+  const l = d.lead;
+  document.getElementById('mTitle').textContent = l.title || '(无标题)';
+  document.getElementById('mMeta').innerHTML =
+    `渠道 ${l.source} · 评分 ${l.score} · 状态 ${l.status} ·
+     <a href="${l.url}" target="_blank" rel="noopener">打开原链接 ↗</a>`;
+  document.getElementById('mReasons').textContent =
+    '评分依据：' + ((JSON.parse(l.score_reasons||'[]')||[]).join(' · ') || '—');
+  const p = (d.proposals||[])[0];
+  curProp = p ? p.content : '';
+  document.getElementById('mProp').textContent = curProp || '（尚未生成提案，评分进入短名单后自动生成）';
+  document.getElementById('modal').classList.add('show');
+}
+function closeModal(){ document.getElementById('modal').classList.remove('show'); }
+async function setStatus(st){
+  if(!curId) return;
+  await j('/api/leads/'+curId+'/status', {method:'POST',
+    headers:{'Content-Type':'application/json'}, body:JSON.stringify({status:st})});
+  closeModal(); loadLeads(); loadSummary();
+}
+async function copyProp(){
+  if(!curProp) return;
+  await navigator.clipboard.writeText(curProp);
+  alert('提案已复制到剪贴板');
+}
+async function mkLink(){
+  const out = document.getElementById('linkout');
+  out.style.display='block'; out.textContent='生成中…';
+  const d = await j('/api/paylink', {method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({amount:parseFloat(document.getElementById('amt').value||'0'),
+      description:document.getElementById('desc').value,
+      email:document.getElementById('pemail').value,
+      reference:'autobiz-'+Date.now()})});
+  if(!d.ok){ out.textContent = '❌ ' + d.error; return; }
+  if(d.mode === 'invoice'){
+    out.textContent = '✅ 发票 ' + d.invoice.id + ' (' + d.invoice.status + ')' +
+      (d.sent && d.sent.ok ? ' 已发送到客户邮箱' : '（草稿，填邮箱后可直发客户）');
+  } else {
+    out.textContent = '✅ 收款链接: ' + d.approve_url;
+  }
+}
+async function addRev(){
+  const a = parseFloat(document.getElementById('ramt').value||'0');
+  if(!a) return alert('请输入金额');
+  await j('/api/revenue', {method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({amount:a, note:document.getElementById('rnote').value,
+      channel:'manual', status:'confirmed'})});
+  document.getElementById('ramt').value=''; loadSummary();
+}
+function tick(){
+  document.getElementById('clock').textContent =
+    new Date().toLocaleTimeString('zh-CN',{hour12:false}) + ' 本地';
+}
+setInterval(loadSummary, 30000);
+setInterval(tick, 1000);
+tick(); loadSummary(); loadLeads();
+</script>
+</body>
+</html>

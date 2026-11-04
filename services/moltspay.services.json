@@ -1,0 +1,56 @@
+{
+  "provider": {
+    "name": "AutoBiz Studio",
+    "wallet": "0xSET_YOUR_WALLET_ADDRESS"
+  },
+  "services": [
+    {
+      "id": "python-scraper-delivery",
+      "type": "file_download",
+      "name": "Custom Python Scraper (any site -> clean JSON/CSV)",
+      "description": "Targeted crawler with retries, proxy rotation, docs. 3-day delivery.",
+      "price": 99.0,
+      "currency": "USDC",
+      "acceptedCurrencies": [
+        "USDC",
+        "USDT"
+      ]
+    },
+    {
+      "id": "ai-text-pipeline",
+      "type": "file_download",
+      "name": "AI Text Processing Pipeline",
+      "description": "Cleaning, extraction, classification, summarization on your data.",
+      "price": 149.0,
+      "currency": "USDC",
+      "acceptedCurrencies": [
+        "USDC",
+        "USDT"
+      ]
+    },
+    {
+      "id": "automation-script",
+      "type": "file_download",
+      "name": "Automation Script (API / scheduler / webhook)",
+      "description": "Unattended daily job with alerting. 48-hour delivery.",
+      "price": 79.0,
+      "currency": "USDC",
+      "acceptedCurrencies": [
+        "USDC",
+        "USDT"
+      ]
+    },
+    {
+      "id": "dashboard-report",
+      "type": "file_download",
+      "name": "Lightweight Dashboard / Report Generator",
+      "description": "One-file HTML dashboard fed by your API or CSV.",
+      "price": 129.0,
+      "currency": "USDC",
+      "acceptedCurrencies": [
+        "USDC",
+        "USDT"
+      ]
+    }
+  ]
+}

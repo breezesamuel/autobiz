@@ -1,0 +1,49 @@
+{
+  "app": {
+    "name": "AutoBiz",
+    "db_path": "data/autobiz.db",
+    "dashboard_port": 8787,
+    "user_agent": "AutoBiz-LeadBot/1.0 (freelance research; contact: owner)"
+  },
+  "crawl": {
+    "interval_seconds": 3600,
+    "timeout": 25,
+    "max_per_source": 40,
+    "min_budget_usd": 20,
+    "max_age_days": 30,
+    "sources": [
+      "github_bounty", "hn", "stackoverflow", "reddit",
+      "remoteok", "arbeitnow", "remotive", "himalayas", "jobicy",
+      "upwork", "fiverr"
+    ],
+    "keywords": [
+      "python", "scraper", "scraping", "crawler", "crawl", "automation",
+      "automate", "ai", "llm", "gpt", "chatbot", "agent", "rag",
+      "script", "bot", "data entry", "data extraction", "web scraping",
+      "api", "integration", "scrapy", "playwright", "selenium",
+      "nlp", "text processing", "pipeline", "dashboard", "scrape"
+    ],
+    "exclude_keywords": [
+      "casino", "porn", "adult", "gambling", "crypto airdrop"
+    ],
+    "github_repo_blocklist": ["bounty-plaza", "alfrexo95/bounty-bot"],
+    "max_per_repo_per_round": 2
+  },
+  "score": {
+    "budget_bonus_max": 35,
+    "keyword_hit_max": 30,
+    "source_bonus": {
+      "github_bounty": 15, "upwork": 15, "fiverr": 10, "hn": 12,
+      "stackoverflow": 8, "reddit": 8, "remoteok": 6, "arbeitnow": 4,
+      "remotive": 4, "himalayas": 4, "jobicy": 4
+    },
+    "freshness_max": 15,
+    "detail_max": 5,
+    "shortlist_threshold": 60
+  },
+  "proposal": {
+    "language": "en",
+    "sender_name": "AutoBiz Studio",
+    "max_chars": 1200
+  }
+}
