@@ -8,10 +8,16 @@ sys.path.insert(0, ".")
 from autobiz.db import upsert_lead  # noqa: E402
 
 rev = sys.argv[1] if len(sys.argv) > 1 else "157934e"
+import shutil  # noqa: E402
+
+git = shutil.which("git") or "C:/Program Files/Git/cmd/git.exe"
 raw = subprocess.run(
-    ["C:/Program Files/Git/cmd/git.exe", "show", f"{rev}:data/leads_export.json"],
+    [git, "show", f"{rev}:data/leads_export.json"],
     capture_output=True, cwd=".",
 ).stdout
+if not raw:
+    print("no export at", rev, "— fresh start")
+    raise SystemExit(0)
 data = json.loads(raw.decode("utf-8"))
 leads = data.get("leads", []) if isinstance(data, dict) else data
 

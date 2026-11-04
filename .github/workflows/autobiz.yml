@@ -27,6 +27,10 @@ jobs:
       - name: Install deps
         run: pip install -r requirements.txt
 
+      - name: Restore previous leads into fresh DB
+        # 云端 runner 每次都是空库：先把仓库里上一轮回写的线索灌回来，保持跨轮累积
+        run: python tools/import_cloud.py HEAD
+
       - name: Run full pipeline
         env:
           # 配置到仓库 Secrets 后，云端报告会带上真实收款通道状态
