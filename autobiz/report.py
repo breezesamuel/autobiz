@@ -3,7 +3,7 @@ import json
 from datetime import datetime, timezone
 
 from . import db
-from .config import EXPORT_PATH, REPORT_PATH, ROOT
+from .config import CFG, EXPORT_PATH, REPORT_PATH, ROOT
 from .crawlers import REGISTRY
 from .payment.moltspay import PRODUCTS, MoltsPay
 from .payment.paypal import PayPal
@@ -27,21 +27,26 @@ def generate_report() -> str:
     shortlisted = [l for l in leads if l["status"] == "shortlisted"]
     proposed = [l for l in leads if l["status"] == "proposed"]
 
-    # 实测节奏
+    # 实测节奏：按最近 5 轮的均值外推，避免首轮全量导入把速率抬高
     crawl_runs = [r for r in runs if r["phase"] == "crawl"]
     now = datetime.now(timezone.utc)
-    new_total = sum(r["new"] for r in crawl_runs)
-    span_h = 1.0
-    if len(crawl_runs) >= 2:
+    recent = crawl_runs[:5]
+    avg_new = (sum(r["new"] for r in recent) / len(recent)) if recent else 0
+    interval_h = 1.0
+    if len(recent) >= 2:
         try:
-            t0 = datetime.strptime(crawl_runs[-1]["started_at"],
-                                   "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=timezone.utc)
-            t1 = datetime.strptime(crawl_runs[0]["started_at"],
-                                   "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=timezone.utc)
-            span_h = max((t1 - t0).total_seconds() / 3600, 0.05)
+            ts = [datetime.strptime(r["started_at"], "%Y-%m-%dT%H:%M:%SZ")
+                  .replace(tzinfo=timezone.utc) for r in recent]
+            gaps = [(ts[i] - ts[i + 1]).total_seconds() / 3600
+                    for i in range(len(ts) - 1)]
+            gaps = [g for g in gaps if g > 0.01]
+            if gaps:
+                interval_h = round(sum(gaps) / len(gaps), 2)
         except Exception:
-            span_h = 1.0
-    rate_per_day = round(new_total / span_h * 24, 1) if new_total else 0
+            interval_h = 1.0
+    # 开发期的连续手动跑会把间隔拉短，外推按系统设计节奏（daemon interval）取下限
+    interval_h = max(interval_h, CFG["crawl"]["interval_seconds"] / 3600)
+    rate_per_day = round(avg_new / interval_h * 24, 1) if avg_new else 0
 
     avg_deal = _avg_deal(leads)
     budget_leads = sum(1 for l in leads if l.get("budget_max") or l.get("budget_min"))
@@ -94,10 +99,13 @@ def generate_report() -> str:
     A("## 2. 实测运行数据")
     A(f"- 累计线索：**{s['total_leads']}** 条（含预算线索 {budget_leads} 条）")
     A(f"- 线索预算总值：**${s['budget_sum_usd']:,.0f}**")
-    A(f"- 短名单：**{s['shortlisted']}** 条 | 已出提案：**{s['proposed']}** 份 "
+    shortlist_total = len(shortlisted) + len(proposed)
+    A(f"- 短名单：**{shortlist_total}** 条（含已出提案 {len(proposed)} 条）| "
+      f"已出提案：**{len(proposed)}** 份 "
       f"（累计生成 {s['proposals_generated']} 份草稿）")
     A(f"- 平均评分：{s['avg_score']} / 100")
-    A(f"- 运行轮次：{s['runs']} 次；实测新增速率：**{rate_per_day} 条/24h**")
+    A(f"- 运行轮次：{s['runs']} 次；近 5 轮均新增 {avg_new:.0f} 条/轮、"
+      f"间隔 {interval_h}h → 外推 **{rate_per_day} 条/24h**")
     A("\n渠道分布：")
     for k, v in (s["by_source"] or {}).items():
         A(f"- {k}: {v}")
@@ -153,8 +161,10 @@ def generate_report() -> str:
       "云端已在 https://github.com/breezesamuel/autobiz 每 2 小时自动运行并回写数据，关机不停机"
       "（首跑 1m13s 全绿，回写提交 157934e）")
     A("\n## 7. 下一步（系统已备好，只差授权/发送）")
-    A("1. 在 Upwork developers 申请 API token 写入 `.env` → 自动接入第一大单源")
-    A("2. 配置 `LLM_BASE_URL/LLM_API_KEY`（智谱或本地 Ollama）→ 提案从模板升级为 AI 定制")
+    A("1. LLM 已接入（GitHub Copilot 网关，复用本机 gh 登录态，零注册零成本）→ "
+      "提案已由 AI 定制生成，落款自动替换")
+    A("2. Upwork API 需要开发者账号授权：developers.upwork.com 申请 key 写入 `.env` "
+      "即自动接入第一大单源（当前浏览器未登录 Upwork，属唯一人工步骤）")
     A("3. 在仪表盘把选中的提案逐份发送（POST 状态为 sent），成交后 `record-revenue` 入账")
     A("4. 云端 24/7 已上线（Actions 每 2 小时跑全流水线）；后续按 `deploy/DEPLOY.md` "
       "可一键加 Docker 主机，形成多点冗余\n")
