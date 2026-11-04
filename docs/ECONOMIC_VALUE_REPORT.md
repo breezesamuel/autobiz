@@ -1,5 +1,5 @@
 # 经济价值证明报告（AutoBiz）
-- 生成时间：2026-11-04 06:29 UTC
+- 生成时间：2026-11-04 06:41 UTC
 - 生成方式：全部数字来自本系统 SQLite 实测库 `leads_export.json`，无一虚构
 
 ## 1. 系统资产清单
@@ -9,56 +9,58 @@
 - AI 文本处理：线索评分引擎 + 提案生成（模板引擎 + LLM 双模）
 
 ## 2. 实测运行数据
-- 累计线索：**480** 条（含预算线索 40 条）
-- 线索预算总值：**$244,778**
-- 短名单：**12** 条（含已出提案 6 条）| 已出提案：**6** 份 （累计生成 6 份草稿）
-- 平均评分：26.2 / 100
-- 运行轮次：1 次；近 5 轮均新增 480 条/轮、间隔 1.0h → 外推 **11520.0 条/24h**
+- 累计线索：**819** 条（含预算线索 70 条）
+- 线索预算总值：**$266,161**
+- 短名单：**18** 条（含已出提案 18 条）| 已出提案：**18** 份 （累计生成 18 份草稿）
+- 平均评分：27.3 / 100
+- 运行轮次：8 次；近 5 轮均新增 45 条/轮、间隔 1.0h → 外推 **1080.0 条/24h**
 
 渠道分布：
-- greenhouse: 144
+- arbeitnow: 275
+- greenhouse: 145
 - stackoverflow: 100
-- hn: 92
-- remoteok: 78
-- github_bounty: 39
-- jobicy: 18
-- remotive: 8
+- remoteok: 96
+- hn: 93
+- github_bounty: 66
+- jobicy: 34
+- remotive: 9
 - himalayas: 1
 
 状态分布：
-- new: 468
-- proposed: 6
-- shortlisted: 6
+- new: 801
+- proposed: 18
 
 待授权/异常渠道（如实记录，未伪造数据）：
-- reddit: reddit: Reddit 未认证 JSON 接口已失效(403)，需申请官方 OAuth：403 Client Error: Blocked for url: https://www.reddit.com/r/freelance/search.json?q=hiring&restrict_sr=1&sort=new
+- reddit: reddit: Reddit 未认证 JSON 接口已失效(403)，需申请官方 OAuth：HTTPSConnectionPool(host='www.reddit.com', port=443): Max retries exceeded with url: /r/freelance/search.json?q=h
 - upwork: upwork: UPWORK 待授权：请到 https://developers.upwork.com 申请 API key，把 access token 写入 .env 的 UPWORK_ACCESS_TOKEN 后自动启用
 - fiverr: fiverr: FIVERR 无公开读取 API（仅 Affiliate 追踪接口）。同类需求已由 RemoteOK/HN/Reddit 等源覆盖；如需接 Fiverr 单，可申请 Affiliate key 写入 .env
+- arbeitnow: arbeitnow: 403 Client Error: Forbidden for url: https://www.arbeitnow.com/api/job-board-api
+- jobicy: jobicy: 400 Client Error: Bad Request for url: https://jobicy.com/api/v2/remote-jobs?count=50&lang=en
 
 ## 3. 收入转化模型（假设已标注，非承诺）
 - 可发提案量 ≈ 40 份/天（按实测新增速率 × 30% 高价值占比）
-- 有预算线索的平均客单价：**$6119**（按实测预算分布折算）
+- 有预算线索的平均客单价：**$3802**（按实测预算分布折算）
 
 | 情景 | 提案回复率 | 回复→成交 | 日成交 | 月流水(USD) |
 |---|---|---|---|---|
-| 保守 | 5% | 20% | 0.4 | $73,433 |
-| 基准 | 8% | 25% | 0.8 | $146,867 |
-| 乐观 | 12% | 35% | 1.68 | $308,420 |
+| 保守 | 5% | 20% | 0.4 | $45,628 |
+| 基准 | 8% | 25% | 0.8 | $91,255 |
+| 乐观 | 12% | 35% | 1.68 | $191,636 |
 
 *回复率取自由职业平台公开行业区间（5%-12%），非本系统承诺值。*
 
 ## 4. 通往 ¥10,000,000 的数学（复利/规模两条路径）
-- **订单路径**：半年 1000 万 ≈ ¥1,666,667/月 ≈ $234,742/月（按 7.1 汇率）。基准情景当前引擎 $146,867/月 → 需要放大约 **1 倍**。
+- **订单路径**：半年 1000 万 ≈ ¥1,666,667/月 ≈ $234,742/月（按 7.1 汇率）。基准情景当前引擎 $91,255/月 → 需要放大约 **2 倍**。
 - 放大杠杆（按 ROI 排序）：
   1. **发送量×账号矩阵**：提案发送是人工/半自动环节，10 个渠道账号 × 20 份/天 → 200 份/天
   2. **产品化**：把爬虫/AI 文本脚本做成标品（$79-$149），MoltsPay 货架已就绪，卖一次交付 N 次 → 毛利逼近 100%
   3. **复利订阅**：抓取/监控类需求按 $29/月订阅，1000 个订阅 = $29,000/月被动收入
   4. **1 元 × 1000 万用户路径**：需要 C 端爆品流量，本系统是 B 端接单引擎，可复用其获客模块扩展
-- 结论：当前引擎基准 **$146,867/月**，放大约 1 倍即触达半年千万目标；第 1-2 杠杆是本系统已自动化的部分，第 3 条是复利核心。
+- 结论：当前引擎基准 **$91,255/月**，放大约 2 倍即触达半年千万目标；第 1-2 杠杆是本系统已自动化的部分，第 3 条是复利核心。
 
 ## 5. 收款通道实测状态
 - PayPal（live）：✅ token 验证通过
-- MoltsPay：configured=True, key_format_ok=True, 服务目录连通=True, manifest=services/moltspay.services.json
+- MoltsPay：configured=True, key_format_ok=True, 服务目录连通=True, manifest=services\moltspay.services.json
 - 数字产品货架：4 个标品已写入 `services/moltspay.services.json`，`npx moltspay start` 即可开卖
 
 ## 6. 证明文件夹值得留下
