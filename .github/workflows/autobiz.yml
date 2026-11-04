@@ -1,2 +1,51 @@
+# 云端 24/7：每 2 小时自动抓取→评分→提案→刷新经济价值报告并回写仓库
+# 电脑关机也照跑（GitHub 免费额度内）
+name: AutoBiz cloud pipeline
 
-# registered: 2026-11-04T12:04:06.4391144+08:00
+on:
+  schedule:
+    - cron: "17 */2 * * *"
+  workflow_dispatch:
+    inputs:
+      limit:
+        description: "每轮最多生成的提案数"
+        default: "6"
+
+permissions:
+  contents: write
+
+jobs:
+  pipeline:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install deps
+        run: pip install -r requirements.txt
+
+      - name: Run full pipeline
+        env:
+          # 配置到仓库 Secrets 后，云端报告会带上真实收款通道状态
+          PAYPAL_CLIENT_ID: ${{ secrets.PAYPAL_CLIENT_ID }}
+          PAYPAL_CLIENT_SECRET: ${{ secrets.PAYPAL_CLIENT_SECRET }}
+          PAYPAL_MODE: live
+          MOLTSPAY_API_KEY: ${{ secrets.MOLTSPAY_API_KEY }}
+          MOLTSPAY_SECRET: ${{ secrets.MOLTSPAY_SECRET }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: python run.py all --limit ${{ github.event.inputs.limit || '6' }}
+
+      - name: Commit fresh data & report
+        run: |
+          git config user.name "autobiz-bot"
+          git config user.email "autobiz-bot@users.noreply.github.com"
+          git add -f data/leads_export.json docs/ECONOMIC_VALUE_REPORT.md services/moltspay.services.json || true
+          if git diff --staged --quiet; then
+            echo "no changes"
+          else
+            git commit -m "chore: refresh leads $(date -u +%FT%TZ)"
+            git push
+          fi
