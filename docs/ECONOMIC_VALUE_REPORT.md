@@ -1,5 +1,5 @@
 # 经济价值证明报告（AutoBiz）
-- 生成时间：2026-11-04 04:17 UTC
+- 生成时间：2026-11-04 04:18 UTC
 - 生成方式：全部数字来自本系统 SQLite 实测库 `leads_export.json`，无一虚构
 
 ## 1. 系统资产清单
@@ -11,8 +11,8 @@
 ## 2. 实测运行数据
 - 累计线索：**669** 条（含预算线索 70 条）
 - 线索预算总值：**$266,151**
-- 短名单：**9** 条 | 已出提案：**7** 份 （累计生成 7 份草稿）
-- 平均评分：16.7 / 100
+- 短名单：**11** 条 | 已出提案：**7** 份 （累计生成 7 份草稿）
+- 平均评分：31.5 / 100
 - 运行轮次：3 次；实测新增速率：**18321.8 条/24h**
 
 渠道分布：
@@ -26,9 +26,9 @@
 - himalayas: 1
 
 状态分布：
-- new: 653
+- new: 651
 - proposed: 7
-- shortlisted: 9
+- shortlisted: 11
 
 待授权/异常渠道（如实记录，未伪造数据）：
 - reddit: reddit: Reddit 未认证 JSON 接口已失效(403)，需申请官方 OAuth：HTTPSConnectionPool(host='www.reddit.com', port=443): Max retries exceeded with url: /r/freelance/search.json?q=h
