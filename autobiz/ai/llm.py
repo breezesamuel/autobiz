@@ -1,10 +1,11 @@
 """OpenAI 兼容 LLM 客户端：GitHub Models / 智谱 / Ollama / Agnes AI 等任意兼容网关。"""
 import shutil
 import subprocess
+import time
 
 import requests
 
-from ..config import env
+from ..config import ROOT, env
 
 _GH_TOKEN_CACHE: dict = {}
 
@@ -14,15 +15,33 @@ def _api_key() -> str:
     if key:
         return key
     # 未写死密钥时动态读取本机 gh CLI 登录态（token 由 gh 自动续期）
-    if "tok" not in _GH_TOKEN_CACHE:
-        exe = shutil.which("gh") or r"C:\Program Files\GitHub CLI\gh.exe"
+    # gh 偶发挂起：仅缓存成功结果，失败下次重试，避免一次超时拖垮整个进程
+    if not _GH_TOKEN_CACHE.get("tok"):
+        cache = ROOT / "data" / ".gh_token"
         try:
-            _GH_TOKEN_CACHE["tok"] = subprocess.run(
-                [exe, "auth", "token"], capture_output=True, text=True, timeout=10
-            ).stdout.strip()
+            if cache.exists() and time.time() - cache.stat().st_mtime < 8 * 3600:
+                _GH_TOKEN_CACHE["tok"] = cache.read_text(encoding="utf-8").strip()
         except Exception:
-            _GH_TOKEN_CACHE["tok"] = ""
-    return _GH_TOKEN_CACHE["tok"]
+            pass
+    if not _GH_TOKEN_CACHE.get("tok"):
+        exe = shutil.which("gh") or r"C:\Program Files\GitHub CLI\gh.exe"
+        for _ in range(3):
+            try:
+                tok = subprocess.run(
+                    [exe, "auth", "token"], capture_output=True, text=True,
+                    timeout=15,
+                ).stdout.strip()
+            except Exception:
+                tok = ""
+            if tok:
+                _GH_TOKEN_CACHE["tok"] = tok
+                try:
+                    cache.parent.mkdir(parents=True, exist_ok=True)
+                    cache.write_text(tok, encoding="utf-8")
+                except Exception:
+                    pass
+                break
+    return _GH_TOKEN_CACHE.get("tok", "")
 
 
 def available() -> bool:

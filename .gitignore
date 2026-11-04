@@ -9,6 +9,7 @@ data/*.db-journal
 data/*.db-shm
 data/*.db-wal
 data/*.lock
+data/.gh_token
 data/reports/*.md
 !data/reports/.gitkeep
 __pycache__/
