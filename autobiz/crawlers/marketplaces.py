@@ -19,12 +19,22 @@ class NeedAuthError(RuntimeError):
 
 
 class UpworkCrawler(BaseCrawler):
-    """Upwork 职位抓取：requests 直抓优先，Playwright 游客态兜底。"""
+    """Upwork 职位抓取：Playwright 游客态（headless chromium）多 query × 多页翻页。"""
     name = "upwork"
-    # 与其他 crawler 共享的关键词组合（复用 config.keywords）
-    DEFAULT_QUERIES = ["python scraper", "python automation", "python ai agent",
-                       "playwright selenium", "data extraction", "web scraping"]
-    MAX_PAGES = 3  # 每 query 抓 3 页 = 30 条
+    # 15 个精准 query 覆盖 Scraping / API / AI / Pipeline / Bot 五大类
+    QUERIES = [
+        # Scraping / Extraction
+        "python web scraping", "playwright selenium scraper", "data extraction automation",
+        # API / Integration
+        "api integration python", "rest api developer", "webhook integration",
+        # AI / Agent
+        "ai agent python automation", "llm pipeline data", "chatbot python",
+        # Data Pipeline
+        "data pipeline python", "etl python", "data automation script",
+        # Bot / Misc
+        "bot development python", "browser automation", "python script automation",
+    ]
+    MAX_PAGES = 5  # 每 query 最多 5 页 = 50 条；跨 query 去重后实际增量可控
 
     def fetch(self) -> list:
         try:
@@ -42,17 +52,7 @@ class UpworkCrawler(BaseCrawler):
         except ImportError:
             raise RuntimeError("playwright 未安装")
 
-        from ..config import CFG
-        cfg_queries = CFG["crawl"].get("keywords", [])
-        keywords = cfg_queries[:] if cfg_queries else self.DEFAULT_QUERIES
-        # 把 keywords 拆成 4 个组合 query（避免单词过短）
-        queries = []
-        for i in range(0, min(len(keywords), 12), 3):
-            chunk = " ".join(keywords[i:i+3])
-            if len(chunk) > 5:
-                queries.append(chunk)
-        if not queries:
-            queries = self.DEFAULT_QUERIES[:2]
+        queries = self.QUERIES  # 15 个精准 query，5 大类
 
         leads, seen_uids, seen_urls = [], set(), set()
         with sync_playwright() as pw:
@@ -65,28 +65,31 @@ class UpworkCrawler(BaseCrawler):
             )
             page = ctx.new_page()
             for q in queries:
-                for pageno in range(1, self.MAX_PAGES + 1):
-                    url = f"https://www.upwork.com/nx/search/jobs/?q={'+'.join(q.split())}&sort=recency&page={pageno}"
-                    try:
-                        resp = page.goto(url, wait_until="domcontentloaded", timeout=45000)
-                        if resp.status != 200:
-                            break
-                        page.wait_for_timeout(4000)  # 动态渲染
-                    except Exception:
-                        break
-                    cards = page.query_selector_all("article.job-tile")
-                    for card in cards:
-                        lead = self._parse_card(card)
-                        if not lead:
-                            continue
-                        if lead.uid in seen_uids or lead.url in seen_urls:
-                            continue
-                        seen_uids.add(lead.uid)
-                        seen_urls.add(lead.url)
-                        leads.append(lead)
-                    # 简单去重：下一页没新卡就翻下一个 query
-                    if not cards:
-                        break
+                # Upwork 游客态同 context 会节流 —— 每个 query 清 cookie/storage
+                try:
+                    ctx.clear_cookies()
+                    page.evaluate("localStorage.clear(); sessionStorage.clear();")
+                except Exception:
+                    pass
+                # 翻页在游客态无效（page=2+ 返回 0），只抓 page=1
+                url = f"https://www.upwork.com/nx/search/jobs/?q={'+'.join(q.split())}&sort=recency"
+                try:
+                    resp = page.goto(url, wait_until="domcontentloaded", timeout=30000)
+                    if resp.status != 200:
+                        continue
+                    page.wait_for_timeout(3500)  # 动态渲染
+                except Exception:
+                    continue
+                cards = page.query_selector_all("article.job-tile")
+                for card in cards:
+                    lead = self._parse_card(card)
+                    if not lead:
+                        continue
+                    if lead.uid in seen_uids or lead.url in seen_urls:
+                        continue
+                    seen_uids.add(lead.uid)
+                    seen_urls.add(lead.url)
+                    leads.append(lead)
             browser.close()
         return leads
 
