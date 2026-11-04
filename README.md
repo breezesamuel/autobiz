@@ -7,7 +7,7 @@
 | 维度 | 实测结果 |
 |---|---|
 | 需求线索 | `python run.py status` 查看当前累计（首轮即 389 条，带可点击原始 URL） |
-| 需求渠道 | 12 个已注册，7 个免授权直抓：GitHub Bounty / HN / StackOverflow / RemoteOK / Remotive / Himalayas / Jobicy |
+| 需求渠道 | 13 个已注册，8 个免授权直抓：GitHub Bounty / HN / StackOverflow / RemoteOK / Remotive / Himalayas / Jobicy / Greenhouse（18 家公司招聘板） |
 | 预算总值 | 报告内 `budget_sum_usd`（年薪已折算、多币种已换汇，不虚高） |
 | AI 文本处理 | 100 分制评分引擎 + 提案生成（模板双风格：接单/求职；LLM 接口即插即用） |
 | 收款通道 | **PayPal 实测打通（live）**：OAuth ✅、发票 API ✅、Payment Link 403 自动降级；MoltsPay x402 已配置（CDP 凭据格式正确、服务目录连通、产品货架就绪） |
@@ -33,9 +33,10 @@ autobiz/
 ├── config.py            配置加载（config.json + .env 密钥，.env 永不入 git）
 ├── db.py                SQLite：leads / proposals / runs / revenue
 ├── http.py              限速重试的共享 HTTP 客户端
-├── crawlers/            12 渠道
+├── crawlers/            13 渠道
 │   ├── dev_sources.py   GitHub Bounty、HN、StackOverflow、Reddit
 │   ├── job_boards.py    RemoteOK、Arbeitnow、Remotive、Himalayas、Jobicy
+│   ├── ats.py           Greenhouse 18 家公司招聘板（替代被 CF 拦截的 arbeitnow）
 │   └── marketplaces.py  Upwork（官方 API 待授权）、Fiverr、Contra
 ├── ai/
 │   ├── scorer.py        预算35+关键词30+新鲜度15+渠道15+详情5 = 100 分制
@@ -53,9 +54,9 @@ autobiz/
 
 | 渠道 | 状态 | 备注 |
 |---|---|---|
-| github_bounty / hn / stackoverflow / remoteok / remotive / himalayas / jobicy | ✅ 直抓 | 免注册公开 API |
+| github_bounty / hn / stackoverflow / remoteok / remotive / himalayas / jobicy / greenhouse | ✅ 直抓 | 免注册公开 API |
 | reddit | ⚠️ 待授权 | 2026-05 起未认证 JSON 403，需官方 OAuth |
-| arbeitnow | ⚠️ Cloudflare 拦截 | JS 盾，requests 无法通过 |
+| arbeitnow | ⚠️ 已停用 | Cloudflare JS 盾（requests / curl_cffi 均 403），由 greenhouse 源替补 |
 | upwork | ⚠️ 待授权 | developers.upwork.com 申请 token 写入 `.env` 即自动启用 |
 | fiverr | ⛔ 无读取 API | 仅 Affiliate 接口，同类需求由其他源覆盖 |
 

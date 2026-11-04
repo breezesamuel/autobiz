@@ -1,4 +1,6 @@
 """提案/投标文案生成：LLM 可用则调 LLM，否则用高转化本地模板（英文，面向海外客户）。"""
+import re
+
 from ..config import CFG
 from ..crawlers.base import keyword_hits
 from . import llm
@@ -83,6 +85,18 @@ def _eta(budget_max) -> str:
     return "5-7 days" if v >= 500 else "3-4 days" if v >= 100 else "2-3 days"
 
 
+def _polish(text: str, sender: str) -> str:
+    """清洗 LLM 输出：去掉标题行与占位符，强制真实落款。"""
+    lines = [ln for ln in text.strip().splitlines()
+             if not re.match(r"^\s*subject\s*:", ln, re.I)]
+    out = "\n".join(lines).strip()
+    out = re.sub(r"\[YOUR NAME\]|\(YOUR NAME\)|\[Your Contact Information\]|\[[^\]]*name[^\]]*\]",
+                 sender, out, flags=re.I)
+    if sender not in out:
+        out = f"{out.rstrip()}\n\nBest,\n{sender}"
+    return out[:CFG["proposal"]["max_chars"]]
+
+
 def generate(lead: dict) -> tuple:
     """返回 (content, method)。"""
     title = lead.get("title") or "your project"
@@ -102,8 +116,9 @@ def generate(lead: dict) -> tuple:
             prompt = (f"Project title: {title}\n\nClient brief:\n{desc}\n\n"
                       f"Capabilities to emphasize: {'; '.join(caps)}\n"
                       f"Sender: {sender}. Delivery ETA: {_eta(lead.get('budget_max'))}.\n"
-                      f"{style}")
-            return llm.chat(_SYSTEM, prompt, temperature=0.7), "llm"
+                      f"End the message with exactly: Best,{chr(10)}{sender}\n"
+                      f"No subject line, no placeholders.\n{style}")
+            return _polish(llm.chat(_SYSTEM, prompt, temperature=0.7), sender), "llm"
         except Exception as e:
             print(f"  [!] LLM 调用失败，回退模板: {e}")
 

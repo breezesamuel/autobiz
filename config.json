@@ -13,7 +13,7 @@
     "max_age_days": 30,
     "sources": [
       "github_bounty", "hn", "stackoverflow", "reddit",
-      "remoteok", "arbeitnow", "remotive", "himalayas", "jobicy",
+      "remoteok", "greenhouse", "remotive", "himalayas", "jobicy",
       "upwork", "fiverr"
     ],
     "keywords": [
@@ -34,8 +34,8 @@
     "keyword_hit_max": 30,
     "source_bonus": {
       "github_bounty": 15, "upwork": 15, "fiverr": 10, "hn": 12,
-      "stackoverflow": 8, "reddit": 8, "remoteok": 6, "arbeitnow": 4,
-      "remotive": 4, "himalayas": 4, "jobicy": 4
+      "stackoverflow": 8, "reddit": 8, "remoteok": 6, "greenhouse": 6,
+      "arbeitnow": 4, "remotive": 4, "himalayas": 4, "jobicy": 4
     },
     "freshness_max": 15,
     "detail_max": 5,

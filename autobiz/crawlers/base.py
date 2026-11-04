@@ -69,7 +69,16 @@ class Lead:
 
 def keyword_hits(text: str, keywords: list) -> list:
     low = (text or "").lower()
-    return [k for k in keywords if k.lower() in low]
+    hits = []
+    for k in keywords:
+        kl = k.lower()
+        # 短词（如 "ai"）必须整词匹配，否则会命中 "Manager"/"Daily"
+        if len(kl) <= 4:
+            if re.search(rf"\b{re.escape(kl)}\b", low):
+                hits.append(k)
+        elif kl in low:
+            hits.append(k)
+    return hits
 
 
 def has_exclude(text: str, excludes: list) -> bool:

@@ -21,7 +21,11 @@ for L in leads:
     if not uid:
         continue
     try:
-        r = upsert_lead(L)
+        item = dict(L)
+        if "raw" not in item and "raw_json" in item:
+            import json as _j
+            item["raw"] = _j.loads(item["raw_json"] or "{}")
+        r = upsert_lead(item)
         if r:
             added += 1
     except Exception as e:
