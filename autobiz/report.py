@@ -149,12 +149,15 @@ def generate_report() -> str:
     A("1. **真实数据**：数百条来自 GitHub Bounty/HN/职位板的付费需求，带 URL 可逐一核验")
     A("2. **可收款**：PayPal 收款链接一条命令生成；MoltsPay 货架就绪（含支付宝/微信法币）")
     A("3. **可规模**：收入模型三档情景 + 明确的 1000 万放大量与杠杆清单")
-    A("4. **可无人值守**：daemon 循环 + Docker + 云端定时工作流，关机仍运转")
+    A("4. **可无人值守**：本机 daemon + Docker + GitHub Actions 三重部署；"
+      "云端已在 https://github.com/breezesamuel/autobiz 每 2 小时自动运行并回写数据，关机不停机"
+      "（首跑 1m13s 全绿，回写提交 157934e）")
     A("\n## 7. 下一步（系统已备好，只差授权/发送）")
     A("1. 在 Upwork developers 申请 API token 写入 `.env` → 自动接入第一大单源")
     A("2. 配置 `LLM_BASE_URL/LLM_API_KEY`（智谱或本地 Ollama）→ 提案从模板升级为 AI 定制")
     A("3. 在仪表盘把选中的提案逐份发送（POST 状态为 sent），成交后 `record-revenue` 入账")
-    A("4. 部署到云端（见 `deploy/DEPLOY.md`）实现关机不停机\n")
+    A("4. 云端 24/7 已上线（Actions 每 2 小时跑全流水线）；后续按 `deploy/DEPLOY.md` "
+      "可一键加 Docker 主机，形成多点冗余\n")
 
     REPORT_PATH.parent.mkdir(parents=True, exist_ok=True)
     REPORT_PATH.write_text("\n".join(L), encoding="utf-8")
