@@ -236,12 +236,87 @@ tbody tr:last-child td { border-bottom: none; }
     <!-- ============ 🔌 硬件 ============ -->
     <section id="hardware" style="display:none">
       <div class="page-title">🔌 自主硬件内核</div>
-      <div class="page-sub">SDP-1 协议 + 引脚贪心 + 安全沙箱 + 指数退避自适应</div>
+      <div class="page-sub">SDP-1 协议 + 引脚贪心 + 安全沙箱 + 指数退避自适应 · <strong style="color:var(--blue)">HAK v2.0: 120 skills runtime</strong></div>
       <div class="split">
         <div class="section"><div class="section-header">已注册设备</div>
           <div class="section-body p0"><div id="hw-registry" class="loading">加载中...</div></div></div>
         <div class="section"><div class="section-header">Sandbox 安全测试</div>
           <div class="section-body"><div id="hw-sandbox" class="loading">加载中...</div></div></div>
+      </div>
+
+      <!-- HAK v2.0 Skills Runtime -->
+      <div class="section" style="margin-top:16px">
+        <div class="section-header">🧠 HAK v2.0 Skills Runtime
+          <span class="tag tag-blue" id="hw-skills-count">加载中...</span>
+        </div>
+        <div class="section-body">
+          <div class="split">
+            <div style="flex:1.3">
+              <div style="margin-bottom:10px;display:flex;gap:8px;align-items:center">
+                <input id="hw-skill-search" placeholder="🔍 搜索 skill 能力 (temperature, motor, heart...)"
+                  style="flex:1;background:var(--card2);color:var(--text);border:1px solid var(--border);padding:8px 12px;border-radius:6px;font-size:13px"
+                  onkeyup="if(event.key==='Enter')searchHwSkill()">
+                <button class="btn" onclick="searchHwSkill()">搜索</button>
+                <button class="btn btn-ghost" onclick="loadHwSkills()">🔄 重置</button>
+              </div>
+              <div id="hw-skills-grid" style="max-height:420px;overflow-y:auto"></div>
+            </div>
+            <div style="flex:1">
+              <div style="margin-bottom:10px;font-size:13px;color:var(--muted)">📊 按 Class 分布</div>
+              <div id="hw-skills-classes" style="display:grid;grid-template-columns:repeat(2,1fr);gap:6px"></div>
+              <div style="margin:16px 0 10px;font-size:13px;color:var(--muted)">🎯 Task → Skill Compose</div>
+              <div style="display:flex;gap:8px;margin-bottom:8px">
+                <input id="hw-compose-task" placeholder="如: patient monitoring, safety protection"
+                  style="flex:1;background:var(--card2);color:var(--text);border:1px solid var(--border);padding:6px 10px;border-radius:6px;font-size:12px">
+                <button class="btn" onclick="runHwCompose()">Compose</button>
+              </div>
+              <div id="hw-compose-result" style="font-size:12px"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Skill 详情 Modal -->
+      <div id="hw-skill-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:9999;align-items:center;justify-content:center" onclick="if(event.target.id==='hw-skill-modal')document.getElementById('hw-skill-modal').style.display='none'">
+        <div style="background:var(--card);border:1px solid var(--border);border-radius:10px;max-width:560px;width:90%;max-height:80vh;overflow-y:auto;padding:24px">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+            <div id="hw-modal-title" style="font-size:18px;font-weight:700"></div>
+            <button class="btn btn-ghost" onclick="document.getElementById('hw-skill-modal').style.display='none'">✕</button>
+          </div>
+          <div id="hw-modal-body"></div>
+        </div>
+      </div>
+
+      <!-- 自定义 Skill 注册 -->
+      <div class="section" style="margin-top:16px">
+        <div class="section-header">🛠️ 运行时自定义 Skill
+          <span class="tag tag-gray">进程内 (重启丢失)</span>
+        </div>
+        <div class="section-body">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+            <div>
+              <div style="font-size:13px;color:var(--muted);margin-bottom:6px">Skill Name</div>
+              <input id="hw-custom-name" placeholder="my_custom_sensor"
+                style="width:100%;background:var(--card2);color:var(--text);border:1px solid var(--border);padding:6px 10px;border-radius:6px;font-size:12px;margin-bottom:10px">
+              <div style="font-size:13px;color:var(--muted);margin-bottom:6px">Device Class</div>
+              <select id="hw-custom-class"
+                style="width:100%;background:var(--card2);color:var(--text);border:1px solid var(--border);padding:6px 10px;border-radius:6px;font-size:12px;margin-bottom:10px">
+                <option>sensor</option><option>actuator</option><option>io</option><option>robot</option>
+                <option>smart_home</option><option>industrial</option><option>medical</option><option>vehicle</option>
+                <option>energy</option><option>gateway</option><option>exoskeleton</option>
+              </select>
+              <div style="font-size:13px;color:var(--muted);margin-bottom:6px">Capabilities (name,type,range,unit — 每行一条)</div>
+              <textarea id="hw-custom-caps" rows="5"
+                placeholder='temperature,read,[-40,85],°C&#10;set_temp,write,[-40,85],°C&#10;defrost,exec'
+                style="width:100%;background:var(--card2);color:var(--text);border:1px solid var(--border);padding:6px 10px;border-radius:6px;font-size:12px;font-family:monospace"></textarea>
+              <button class="btn" onclick="registerHwCustom()" style="margin-top:10px">➕ 注册</button>
+            </div>
+            <div>
+              <div style="font-size:13px;color:var(--muted);margin-bottom:6px">已注册自定义 Skills</div>
+              <div id="hw-custom-list" style="font-size:12px;color:var(--muted)">加载中...</div>
+            </div>
+          </div>
+        </div>
       </div>
     </section>
 
@@ -658,6 +733,217 @@ async function loadHardware() {
     <div class="raw-block"><span class="k">Sandbox</span> 拦截危险写操作 (<span class="k">erase_flash</span>, <span class="k">write_protected</span>, <span class="k">firmware_update</span>)
   只有 <span class="s">perm="admin"</span> 能绕过. 普通权限永远被挡.
   指数退避: <span class="n">attempts=3</span> → <span class="n">3375ms</span> 间隔</div>`;
+
+  // HAK v2.0 Skills Runtime — 首次进入 hardware section 才加载
+  if (!window._hwSkillsLoaded) {
+    window._hwSkillsLoaded = true;
+    loadHwSkills();
+    loadHwCustomList();
+  }
+}
+
+// ===== HAK v2.0 Skills =====
+async function loadHwSkills() {
+  const data = await fetchJSON("/api/hardware/skills") || {};
+  const total = data.total || 120;
+  document.getElementById("hw-skills-count").textContent = total + " skills";
+
+  // Class 分布
+  const classes = data.by_class || {};
+  const maxClass = Math.max(...Object.values(classes), 1);
+  const clsHtml = Object.entries(classes).sort((a,b)=>b[1]-a[1]).map(([k,v]) => {
+    const pct = Math.round(v / maxClass * 100);
+    return `<div style="background:var(--card2);padding:6px 10px;border-radius:4px">
+      <div style="display:flex;justify-content:space-between;font-size:11px">
+        <span style="color:var(--muted)">${k}</span><span style="font-weight:600">${v}</span>
+      </div>
+      <div style="height:4px;background:var(--border);border-radius:2px;margin-top:4px">
+        <div style="height:100%;width:${pct}%;background:var(--blue);border-radius:2px"></div>
+      </div></div>`;
+  }).join("");
+  document.getElementById("hw-skills-classes").innerHTML = clsHtml;
+
+  // Skill 卡片网格 (按 class 分组, 每组最多显示 8 个 + "全部展开"按钮)
+  renderSkillGrid(classes);
+}
+
+function renderSkillGrid(classes, searchResults) {
+  const grid = document.getElementById("hw-skills-grid");
+  if (searchResults) {
+    // 搜索结果
+    if (searchResults.length === 0) {
+      grid.innerHTML = `<div style="color:var(--muted);font-size:12px;padding:20px;text-align:center">未找到匹配 skill</div>`;
+      return;
+    }
+    grid.innerHTML = searchResults.map(m => `
+      <div onclick="showHwSkillDetail('${safe(m.skill)}')" class="hw-skill-card"
+        style="background:var(--card2);padding:8px 12px;border-radius:6px;cursor:pointer;margin-bottom:6px;border-left:3px solid var(--blue);display:flex;justify-content:space-between;align-items:center">
+        <div>
+          <div style="font-size:12px;font-weight:600">${safe(m.skill)}</div>
+          <div style="font-size:10px;color:var(--muted)">${safe(m.device_class)} · ${(m.capabilities||[]).slice(0,3).join(", ")}</div>
+        </div>
+        <div style="font-size:11px;color:var(--blue);font-weight:600">score=${m.score}</div>
+      </div>`).join("");
+    return;
+  }
+  // 按 class 分组显示
+  const names = window._hwSkillNames || [];
+  fetchJSON("/api/hardware/skills").then(d => {
+    if (!d) return;
+    const html = Object.entries(classes).sort((a,b)=>b[1]-a[1]).map(([cls, count]) => {
+      const classNames = (d.names || []).filter(n => {
+        // names API? 直接从 by_class 取
+        return true; // fallback, 我们从 search 走更好
+      });
+      const namesForClass = (d.by_class_names || {})[cls] || [];
+      const show = namesForClass.slice(0, 8);
+      const extra = Math.max(0, namesForClass.length - 8);
+      return `<div style="margin-bottom:14px">
+        <div style="font-size:12px;color:var(--muted);margin-bottom:6px;font-weight:600">${cls} <span style="font-weight:400">(${count})</span></div>
+        <div style="display:flex;flex-wrap:wrap;gap:4px">
+          ${show.map(n => `<span onclick="showHwSkillDetail('${safe(n)}')"
+            style="background:var(--card2);padding:4px 8px;border-radius:4px;font-size:11px;cursor:pointer;border:1px solid var(--border)">${safe(n)}</span>`).join("")}
+          ${extra > 0 ? `<span style="font-size:11px;color:var(--muted);padding:4px 8px">+${extra} 更多</span>` : ""}
+        </div></div>`;
+    }).join("");
+    grid.innerHTML = html;
+  });
+}
+
+async function searchHwSkill() {
+  const kw = (document.getElementById("hw-skill-search").value || "").trim();
+  if (!kw) { loadHwSkills(); return; }
+  const data = await fetchJSON(`/api/hardware/skills/search/${encodeURIComponent(kw)}`) || {};
+  renderSkillGrid(null, data.results || []);
+}
+
+async function showHwSkillDetail(name) {
+  const data = await fetchJSON(`/api/hardware/skills/${encodeURIComponent(name)}`) || {};
+  document.getElementById("hw-modal-title").innerHTML =
+    `${safe(name)} <span style="font-size:13px;color:var(--muted);font-weight:400">${safe(data.device_class || "")}</span>`;
+  // Capabilities 表格
+  const caps = (data.capabilities || []).map(c => {
+    const range = c.range ? `[${c.range[0]}, ${c.range[1]}]${c.unit? " "+c.unit:""}` : "";
+    return `<tr><td style="padding:4px 8px;border-bottom:1px solid var(--border)">
+      <span style="font-weight:600">${safe(c.name)}</span></td>
+      <td style="padding:4px 8px;border-bottom:1px solid var(--border)">
+        ${tag(c.type, c.type==="read"?"blue":c.type==="write"?"amber":c.type==="exec"?"purple":"gray")}</td>
+      <td style="padding:4px 8px;border-bottom:1px solid var(--border);color:var(--muted);font-size:11px">${range}</td></tr>`;
+  }).join("");
+  // Live reads
+  const reads = data.live_reads || {};
+  const readHtml = Object.keys(reads).length > 0
+    ? Object.entries(reads).map(([k,v]) => `<div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px dashed var(--border)">
+        <span style="color:var(--muted)">${safe(k)}</span>
+        <span style="font-weight:600;color:var(--blue)">${v}</span></div>`).join("")
+    : `<div style="color:var(--muted);font-size:12px">无 read 能力 (纯 write/exec/notify 设备)</div>`;
+
+  document.getElementById("hw-modal-body").innerHTML = `
+    <div style="margin-bottom:16px">
+      <div style="font-size:12px;color:var(--muted);margin-bottom:6px">实时数据</div>
+      <div style="background:var(--card2);padding:12px;border-radius:6px">${readHtml}</div>
+    </div>
+    <div style="font-size:12px;color:var(--muted);margin-bottom:6px">Capabilities</div>
+    <table style="width:100%;border-collapse:collapse;font-size:12px">
+      <thead><tr style="color:var(--muted);font-size:11px">
+        <th style="text-align:left;padding:4px 8px">Name</th>
+        <th style="text-align:left;padding:4px 8px">Type</th>
+        <th style="text-align:left;padding:4px 8px">Range</th>
+      </tr></thead><tbody>${caps}</tbody></table>
+    ${data.vendor_id ? `<div style="margin-top:12px;font-size:11px;color:var(--muted)">Vendor: ${safe(data.vendor_id)} · Protocol: ${safe(data.protocol_version||"")} · SN: ${safe(data.serial_number||"")}</div>` : ""}`;
+  document.getElementById("hw-skill-modal").style.display = "flex";
+}
+
+async function runHwCompose() {
+  const task = (document.getElementById("hw-compose-task").value || "").trim();
+  if (!task) return;
+  const data = await fetchJSON(`/api/hardware/orchestrate?task=${encodeURIComponent(task)}`) || {};
+  const pipeline = data.pipeline || {};
+  const html = `
+    <div style="margin-bottom:8px">
+      <span style="font-size:11px;color:var(--muted)">plan_type: </span>
+      <span style="font-size:11px;font-weight:600;color:var(--blue)">${safe(data.plan_type || "")}</span>
+      <span style="font-size:11px;color:var(--muted);margin-left:8px">· skills: </span>
+      <span style="font-size:11px;font-weight:600">${(data.skills||[]).map(s=>safe(s)).join(", ")}</span>
+    </div>
+    <div style="font-size:11px;color:var(--muted);margin-bottom:6px">Pipeline steps: ${pipeline.steps_done || 0}</div>
+    <div style="background:var(--card2);padding:10px;border-radius:6px;max-height:160px;overflow-y:auto">
+      ${Object.entries(pipeline.results || {}).map(([k,v]) => {
+        const val = typeof v === "object" ? JSON.stringify(v) : v;
+        return `<div style="padding:3px 0;border-bottom:1px dashed var(--border);font-size:11px">
+          <span style="color:var(--muted)">${safe(k)}:</span> <span style="font-weight:600">${safe(String(val).slice(0,60))}</span></div>`;
+      }).join("")}
+    </div>
+    ${data.triggers && data.triggers.length > 0 ? `
+    <div style="font-size:11px;color:var(--muted);margin-top:8px;margin-bottom:4px">Triggers (${data.triggers.length})</div>
+    <div style="background:var(--card2);padding:8px;border-radius:6px;font-size:11px">
+      ${data.triggers.slice(0,3).map(t => `<div style="margin-bottom:4px">⚡ <span style="color:var(--muted)">${safe(t.watch_cap||"")}</span> → <span style="color:var(--blue)">${safe(t.action_cap||"")}</span> ${tag(t.level||"warn", t.level==="crit"?"red":"amber")}</div>`).join("")}
+    </div>` : ""}
+  `;
+  document.getElementById("hw-compose-result").innerHTML = html;
+}
+
+async function registerHwCustom() {
+  const name = (document.getElementById("hw-custom-name").value || "").trim();
+  const cls = document.getElementById("hw-custom-class").value;
+  const capsRaw = (document.getElementById("hw-custom-caps").value || "").trim();
+  if (!name || !capsRaw) { alert("请填写 Skill Name 和 Capabilities"); return; }
+  const caps = capsRaw.split("\n").map(line => {
+    const [n, type, rng, unit] = line.split(",").map(s => s.trim());
+    const cap = { name: n, type: type };
+    if (rng) {
+      const m = rng.match(/\[(-?[\d.]+),\s*(-?[\d.]+)\]/);
+      if (m) cap.range = [parseFloat(m[1]), parseFloat(m[2])];
+    }
+    if (unit) cap.unit = unit;
+    return cap;
+  });
+  try {
+    const body = { name, device_class: cls, capabilities: caps };
+    const resp = await fetch("/api/hardware/skills", {
+      method: "POST",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify(body)
+    });
+    const data = await resp.json();
+    if (resp.ok) {
+      alert(`✅ Skill '${name}' 注册成功!`);
+      document.getElementById("hw-custom-name").value = "";
+      document.getElementById("hw-custom-caps").value = "";
+      loadHwCustomList();
+      loadHwSkills();
+    } else {
+      alert(`❌ 注册失败: ${data.error || resp.status}`);
+    }
+  } catch(e) { alert("❌ 网络错误: " + e.message); }
+}
+
+async function loadHwCustomList() {
+  const data = await fetchJSON("/api/hardware/skills") || {};
+  const customs = data.custom_skills || [];
+  const el = document.getElementById("hw-custom-list");
+  if (customs.length === 0) {
+    el.innerHTML = `<div style="color:var(--muted);font-size:11px;padding:20px;text-align:center">暂无自定义 skill</div>`;
+    return;
+  }
+  el.innerHTML = customs.map(s => `
+    <div style="background:var(--card2);padding:8px 12px;border-radius:6px;margin-bottom:6px;display:flex;justify-content:space-between;align-items:center">
+      <div>
+        <div style="font-size:12px;font-weight:600">${safe(s.name)}</div>
+        <div style="font-size:10px;color:var(--muted)">${safe(s.device_class)} · ${(s.capabilities||[]).map(c=>c.name).join(", ")}</div>
+      </div>
+      <button onclick="unregisterHw('${safe(s.name)}')" class="btn btn-ghost" style="font-size:10px;padding:4px 8px">🗑️ 删除</button>
+    </div>`).join("");
+}
+
+async function unregisterHw(name) {
+  if (!confirm(`确定要注销 skill '${name}' 吗?`)) return;
+  try {
+    const resp = await fetch(`/api/hardware/skills/${encodeURIComponent(name)}`, { method: "DELETE" });
+    const data = await resp.json();
+    if (resp.ok) { loadHwCustomList(); loadHwSkills(); }
+    else { alert(`❌ 注销失败: ${data.error || resp.status}`); }
+  } catch(e) { alert("❌ 网络错误"); }
 }
 
 // ===== 9. API Hub =====
