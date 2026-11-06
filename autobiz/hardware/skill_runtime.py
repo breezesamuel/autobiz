@@ -31,20 +31,27 @@ from .skills_library import (
 _HDS_PATH = Path(__file__).parent / "hds_library.json"
 
 
-# ========== 单 skill 运行时 ==========
-
 class SkillRuntime:
-    """一个 skill 的完整运行时: descriptor + transport + 执行 API."""
+    """一个 skill 的完整运行时: descriptor + transport + 执行 API.
 
-    def __init__(self, skill_name: str):
+    所有 SkillRuntime 共享同一个 DataBus — 写一个 skill 会被另一个读到.
+    """
+
+    def __init__(self, skill_name: str, bus=None):
         if skill_name not in ALL_SKILLS:
             raise KeyError(f"unknown skill: {skill_name!r}")
         raw = ALL_SKILLS[skill_name]
         self.name = skill_name
         self.descriptor = validate(dict(raw))
+        # 延迟 import 解循环 (composer 也 import skill_runtime)
+        if bus is None:
+            from .composer import get_bus
+            bus = get_bus()
+        self._bus = bus
         self.transport = MockTransport(
             descriptor=self.descriptor,
             address=f"mock://hak-v2/{skill_name.lower()}",
+            bus=self._bus,
         )
         self._running = True
         self._lock = threading.Lock()

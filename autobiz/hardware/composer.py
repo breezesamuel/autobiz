@@ -29,6 +29,24 @@ from .skill_runtime import SkillRuntime, SkillEngine, engine as _engine
 
 # ===================== 数据总线 =====================
 
+# 全局单例 — 所有 MockTransport / SkillRuntime 共享这一个 bus
+_global_bus: DataBus | None = None
+_global_bus_lock = threading.Lock()
+
+def get_bus() -> DataBus:
+    """拿全局 DataBus 单例 — 所有 skill 读写都共享这个状态空间."""
+    global _global_bus
+    if _global_bus is None:
+        with _global_bus_lock:
+            if _global_bus is None:
+                _global_bus = DataBus()
+    return _global_bus
+
+def reset_bus() -> None:
+    """测试用 — 清掉全局 bus."""
+    global _global_bus
+    _global_bus = None
+
 class DataBus:
     """skill 之间传递数据的线程安全总线."""
 
