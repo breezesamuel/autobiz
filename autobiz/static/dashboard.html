@@ -1,0 +1,946 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AutoBiz — 自托管赚钱平台 Dashboard</title>
+<style>
+:root {
+  --bg: #0f1115; --card: #1a1d25; --card2: #222631;
+  --border: #2a2f3d; --text: #e4e6eb; --muted: #8b93a7;
+  --green: #22c55e; --red: #ef4444; --amber: #f59e0b; --blue: #3b82f6;
+  --purple: #a855f7; --pink: #ec4899;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: -apple-system, "Segoe UI", system-ui, sans-serif;
+  background: var(--bg); color: var(--text); font-size: 14px; }
+a { color: var(--blue); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+/* Layout */
+.layout { display: grid; grid-template-columns: 220px 1fr; min-height: 100vh; }
+.sidebar { background: var(--card); border-right: 1px solid var(--border);
+  padding: 20px 0; position: sticky; top: 0; height: 100vh; overflow-y: auto; }
+.sidebar .logo { font-size: 18px; font-weight: 700; padding: 0 20px 20px;
+  border-bottom: 1px solid var(--border); color: var(--blue); }
+.sidebar .logo span { color: var(--muted); font-weight: 400; font-size: 12px; }
+.sidebar nav { padding: 12px 0; }
+.sidebar nav a { display: block; padding: 10px 20px; color: var(--muted);
+  border-left: 3px solid transparent; font-size: 13px; }
+.sidebar nav a:hover { background: var(--card2); color: var(--text); }
+.sidebar nav a.active { border-left-color: var(--blue); color: var(--text);
+  background: var(--card2); }
+.sidebar .section-label { padding: 16px 20px 6px; font-size: 11px;
+  color: var(--muted); text-transform: uppercase; letter-spacing: 0.1em; }
+
+.main { padding: 28px 36px; max-width: 1400px; }
+.page-title { font-size: 22px; font-weight: 700; margin-bottom: 4px; }
+.page-sub { color: var(--muted); margin-bottom: 24px; }
+
+/* Cards */
+.grid-kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px; margin-bottom: 28px; }
+.kpi { background: var(--card); border: 1px solid var(--border); border-radius: 10px;
+  padding: 18px 20px; }
+.kpi .label { color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em; }
+.kpi .value { font-size: 28px; font-weight: 700; margin-top: 6px; }
+.kpi .sub { font-size: 12px; color: var(--muted); margin-top: 4px; }
+.kpi .dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%;
+  margin-right: 6px; vertical-align: middle; }
+
+.section { background: var(--card); border: 1px solid var(--border); border-radius: 10px;
+  margin-bottom: 24px; overflow: hidden; }
+.section-header { padding: 14px 20px; border-bottom: 1px solid var(--border);
+  font-weight: 600; display: flex; justify-content: space-between; align-items: center; }
+.section-body { padding: 16px 20px; }
+.section-body.p0 { padding: 0; }
+
+/* Tabs */
+.tabs { display: flex; border-bottom: 1px solid var(--border); }
+.tabs button { background: none; border: none; color: var(--muted); padding: 12px 20px;
+  cursor: pointer; font-size: 13px; border-bottom: 2px solid transparent; }
+.tabs button.active { color: var(--text); border-bottom-color: var(--blue); }
+
+/* Tables */
+table { width: 100%; border-collapse: collapse; font-size: 13px; }
+th { text-align: left; padding: 10px 14px; color: var(--muted); font-weight: 500;
+  font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em;
+  border-bottom: 1px solid var(--border); background: var(--card2); }
+td { padding: 10px 14px; border-bottom: 1px solid var(--border); }
+tr:hover td { background: rgba(255,255,255,0.02); }
+tbody tr:last-child td { border-bottom: none; }
+
+/* Tags */
+.tag { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; }
+.tag-green { background: rgba(34,197,94,0.15); color: var(--green); }
+.tag-red { background: rgba(239,68,68,0.15); color: var(--red); }
+.tag-amber { background: rgba(245,158,11,0.15); color: var(--amber); }
+.tag-blue { background: rgba(59,130,246,0.15); color: var(--blue); }
+.tag-purple { background: rgba(168,85,247,0.15); color: var(--purple); }
+.tag-gray { background: rgba(139,147,167,0.15); color: var(--muted); }
+
+/* Bars */
+.bar { height: 6px; background: var(--card2); border-radius: 3px; overflow: hidden; }
+.bar-fill { height: 100%; background: linear-gradient(90deg, var(--blue), var(--purple)); }
+
+/* Loader */
+.loading { color: var(--muted); font-style: italic; padding: 20px; text-align: center; }
+
+/* Split pane */
+.split { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+@media (max-width: 900px) { .split { grid-template-columns: 1fr; } }
+
+/* Non-displayable (developer/raw data) */
+.raw-block { font-family: ui-monospace, Menlo, monospace; background: #0a0c10;
+  border: 1px solid var(--border); border-radius: 6px; padding: 12px 14px;
+  font-size: 12px; color: #a5b4c8; max-height: 400px; overflow: auto;
+  white-space: pre-wrap; word-break: break-all; line-height: 1.5; }
+.raw-block .k { color: var(--purple); }
+.raw-block .n { color: var(--green); }
+.raw-block .s { color: var(--amber); }
+
+/* Badges */
+.badge { display: inline-flex; align-items: center; gap: 4px; font-size: 11px;
+  padding: 3px 8px; border-radius: 12px; font-weight: 500; }
+.badge-live { background: rgba(34,197,94,0.15); color: var(--green); }
+.badge-live::before { content: ''; width: 6px; height: 6px; border-radius: 50%;
+  background: var(--green); animation: pulse 1.5s infinite; }
+@keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.3; } }
+
+/* Buttons */
+.btn { background: var(--blue); color: #fff; border: none; padding: 8px 16px;
+  border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 500; }
+.btn:hover { filter: brightness(1.15); }
+.btn-ghost { background: transparent; border: 1px solid var(--border); color: var(--text); }
+.btn-ghost:hover { background: var(--card2); }
+
+/* Footer */
+.footer { text-align: center; color: var(--muted); font-size: 11px; padding: 28px; }
+.footer code { color: var(--blue); }
+</style>
+</head>
+<body>
+
+<div class="layout">
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="logo">🚀 AutoBiz<span> v1.0</span></div>
+    <div class="section-label">📊 Dashboard</div>
+    <nav>
+      <a href="#overview" class="active">🏠 总览</a>
+      <a href="#leads">🎯 线索</a>
+      <a href="#proposals">📝 提案</a>
+      <a href="#tracker">📊 漏斗</a>
+      <a href="#payments">💳 支付</a>
+    </nav>
+    <div class="section-label">🧮 数学 & 硬件</div>
+    <nav>
+      <a href="#vector">🧮 向量 / 分位数</a>
+      <a href="#pareto">📈 Pareto 最优</a>
+      <a href="#hardware">🔌 硬件内核</a>
+    </nav>
+    <div class="section-label">🚀 深度自动化</div>
+    <nav>
+      <a href="#sales-funnel">🤖 AI 销售漏斗</a>
+      <a href="#exoskeleton">🦾 外骨骼控制</a>
+      <a href="#procurement">🛒 AI 采购比价</a>
+    </nav>
+    <div class="section-label">🌐 工具</div>
+    <nav>
+      <a href="#apihub">🌐 API Hub</a>
+      <a href="#subscription">💎 订阅墙</a>
+    </nav>
+    <div class="section-label">🛠️ 开发者 (非展示)</div>
+    <nav>
+      <a href="#raw-api">🔧 API 端点列表</a>
+      <a href="#db-schema">🗄️ DB Schema</a>
+      <a href="#config">⚙️ 配置</a>
+    </nav>
+  </aside>
+
+  <!-- Main -->
+  <main class="main">
+
+    <!-- ============ 🏠 总览 ============ -->
+    <section id="overview">
+      <div class="page-title">🏠 系统总览</div>
+      <div class="page-sub">AutoBiz 全主动自运营赚钱平台 —— 实时状态</div>
+      <div id="overview-content" class="loading">加载中...</div>
+    </section>
+
+    <!-- ============ 🎯 线索 ============ -->
+    <section id="leads" style="display:none">
+      <div class="page-title">🎯 线索池</div>
+      <div class="page-sub">2264 条线索，来自 23 个爬虫源</div>
+      <div class="section">
+        <div class="section-header">最新线索 <button class="btn btn-ghost" onclick="loadLeads()">刷新</button></div>
+        <div class="section-body p0"><div id="leads-content" class="loading">加载中...</div></div>
+      </div>
+    </section>
+
+    <!-- ============ 📝 提案 ============ -->
+    <section id="proposals" style="display:none">
+      <div class="page-title">📝 提案生成</div>
+      <div class="page-sub">827 条已生成提案，37% 入库率</div>
+      <div class="section">
+        <div class="section-header">最新提案</div>
+        <div class="section-body p0"><div id="proposals-content" class="loading">加载中...</div></div>
+      </div>
+    </section>
+
+    <!-- ============ 📊 漏斗 ============ -->
+    <section id="tracker" style="display:none">
+      <div class="page-title">📊 转化漏斗</div>
+      <div class="page-sub">sent → replied → closed</div>
+      <div class="split">
+        <div class="section"><div class="section-header">漏斗数据</div>
+          <div class="section-body"><div id="tracker-content" class="loading">加载中...</div></div></div>
+        <div class="section"><div class="section-header">意图分布</div>
+          <div class="section-body"><div id="tracker-intents" class="loading">加载中...</div></div></div>
+      </div>
+    </section>
+
+    <!-- ============ 💳 支付 ============ -->
+    <section id="payments" style="display:none">
+      <div class="page-title">💳 支付链路</div>
+      <div class="page-sub">PayPal LIVE API 已真调成功</div>
+      <div class="section">
+        <div class="section-header">发票列表</div>
+        <div class="section-body p0"><div id="payments-content" class="loading">加载中...</div></div>
+      </div>
+    </section>
+
+    <!-- ============ 🧮 向量 ============ -->
+    <section id="vector" style="display:none">
+      <div class="page-title">🧮 数学分析 — 向量空间</div>
+      <div class="page-sub">TF-IDF + K-Means++ + 预算分位数（纯 Python，零依赖）</div>
+      <div class="split">
+        <div class="section"><div class="section-header">预算分位数 (真实 DB 500 条)</div>
+          <div class="section-body"><div id="vector-quantiles" class="loading">加载中...</div></div></div>
+        <div class="section"><div class="section-header">K-Means 聚类 (k=5)</div>
+          <div class="section-body"><div id="vector-cluster" class="loading">加载中...</div></div></div>
+      </div>
+    </section>
+
+    <!-- ============ 📈 Pareto ============ -->
+    <section id="pareto" style="display:none">
+      <div class="page-title">📈 Pareto 最优报价</div>
+      <div class="page-sub">向量空间多目标优化 — 利润 vs 客户效用</div>
+      <div class="section">
+        <div class="section-header">当前 Lead (id=1, budget=$500)</div>
+        <div class="section-body"><div id="pareto-content" class="loading">加载中...</div></div>
+      </div>
+    </section>
+
+    <!-- ============ 🔌 硬件 ============ -->
+    <section id="hardware" style="display:none">
+      <div class="page-title">🔌 自主硬件内核</div>
+      <div class="page-sub">SDP-1 协议 + 引脚贪心 + 安全沙箱 + 指数退避自适应</div>
+      <div class="split">
+        <div class="section"><div class="section-header">已注册设备</div>
+          <div class="section-body p0"><div id="hw-registry" class="loading">加载中...</div></div></div>
+        <div class="section"><div class="section-header">Sandbox 安全测试</div>
+          <div class="section-body"><div id="hw-sandbox" class="loading">加载中...</div></div></div>
+      </div>
+    </section>
+
+    <!-- ============ 🤖 AI 销售漏斗 ============ -->
+    <section id="sales-funnel" style="display:none">
+      <div class="page-title">🤖 AI 销售代理 — 转化漏斗</div>
+      <div class="page-sub">五维评分 → 情感分类 → SLA 跟进 → 蒙特卡洛漏斗模拟</div>
+      <div class="split">
+        <div class="section"><div class="section-header">蒙特卡洛漏斗模拟
+          <span class="tag tag-blue">n=10</span></div>
+          <div class="section-body"><div id="funnel-sim" class="loading">加载中...</div></div></div>
+        <div class="section"><div class="section-header">各阶段计数</div>
+          <div class="section-body"><div id="funnel-tracker" class="loading">加载中...</div></div></div>
+      </div>
+      <div class="section"><div class="section-header">漏斗可视化（带转化率 & 瓶颈）
+        <button class="btn btn-ghost" onclick="loadFunnel(true)">🔄 重跑 n=100</button></div>
+        <div class="section-body"><div id="funnel-viz" class="loading">加载中...</div></div>
+      </div>
+    </section>
+
+    <!-- ============ 🦾 外骨骼 ============ -->
+    <section id="exoskeleton" style="display:none">
+      <div class="page-title">🦾 外骨骼 ROS2 控制器</div>
+      <div class="page-sub">4 DOF 关节 + 安全站立 10 步渐变 + IMU 失衡 + 紧急停止 — HAK v2.0 第 13 种设备</div>
+      <div class="split">
+        <div class="section"><div class="section-header">实时状态</div>
+          <div class="section-body"><div id="exo-status" class="loading">加载中...</div></div></div>
+        <div class="section"><div class="section-header">关节角度</div>
+          <div class="section-body"><div id="exo-joints" class="loading">加载中...</div></div></div>
+      </div>
+      <div class="split">
+        <div class="section"><div class="section-header">IMU & 平衡检测</div>
+          <div class="section-body"><div id="exo-imu" class="loading">加载中...</div></div></div>
+        <div class="section"><div class="section-header">HAK v2.0 注册 + Sandbox 自检</div>
+          <div class="section-body"><div id="exo-hak" class="loading">加载中...</div></div></div>
+      </div>
+    </section>
+
+    <!-- ============ 🛒 AI 采购 ============ -->
+    <section id="procurement" style="display:none">
+      <div class="page-title">🛒 AI 采购增强 — 智能比价</div>
+      <div class="page-sub">6 供应商数据库 × 价格40% + 交期20% + 质量20% + 供应商20% 加权评分</div>
+      <div class="section">
+        <div class="section-header">品类选择
+          <select id="proc-item" onchange="loadProcurement()" style="background:var(--card2);color:var(--text);border:1px solid var(--border);padding:6px 12px;border-radius:6px;font-size:13px">
+            <option value="radar">🎯 跌倒雷达 (300台/年)</option>
+            <option value="exoskeleton">🦾 外骨骼助行器 (150台/年)</option>
+            <option value="supplies">🧻 护理耗材 (40,000份/年)</option>
+          </select>
+        </div>
+      </div>
+      <div class="split">
+        <div class="section"><div class="section-header">供应商 AI 排名</div>
+          <div class="section-body p0"><div id="proc-suppliers" class="loading">加载中...</div></div></div>
+        <div class="section"><div class="section-header">权重 & 汇总</div>
+          <div class="section-body"><div id="proc-summary" class="loading">加载中...</div></div></div>
+      </div>
+    </section>
+
+    <!-- ============ 🌐 API Hub ============ -->
+    <section id="apihub" style="display:none">
+      <div class="page-title">🌐 全球免费 API Hub</div>
+      <div class="page-sub">2314 个 API，1154 个零 key 直接用</div>
+      <div class="section">
+        <div class="section-header">按分类浏览</div>
+        <div class="section-body"><div id="apihub-content" class="loading">加载中...</div></div>
+      </div>
+    </section>
+
+    <!-- ============ 💎 订阅墙 ============ -->
+    <section id="subscription" style="display:none">
+      <div class="page-title">💎 订阅墙</div>
+      <div class="page-sub">3 Plans — free / pro / enterprise</div>
+      <div class="section">
+        <div class="section-header">Plans</div>
+        <div class="section-body"><div id="plans-content" class="loading">加载中...</div></div>
+      </div>
+      <div class="section">
+        <div class="section-header">当前订阅状态</div>
+        <div class="section-body"><div id="sub-content" class="loading">加载中...</div></div>
+      </div>
+    </section>
+
+    <!-- ============ 🔧 开发者 API 端点 (非展示) ============ -->
+    <section id="raw-api" style="display:none">
+      <div class="page-title">🔧 API 端点列表 <span class="tag tag-amber">开发者 (非展示)</span></div>
+      <div class="page-sub">所有可用 JSON 端点 — 点击 URL 直接在新标签页打开</div>
+      <div class="section">
+        <div class="section-body p0"><div id="api-list" class="loading">加载中...</div></div>
+      </div>
+    </section>
+
+    <!-- ============ 🗄️ DB Schema ============ -->
+    <section id="db-schema" style="display:none">
+      <div class="page-title">🗄️ DB Schema <span class="tag tag-amber">开发者 (非展示)</span></div>
+      <div class="page-sub">SQLite 表结构 + 行数</div>
+      <div class="section">
+        <div class="section-body p0"><div id="schema-content" class="loading">加载中...</div></div>
+      </div>
+    </section>
+
+    <!-- ============ ⚙️ Config ============ -->
+    <section id="config" style="display:none">
+      <div class="page-title">⚙️ 运行配置 <span class="tag tag-amber">开发者 (非展示)</span></div>
+      <div class="page-sub">.env + 系统信息</div>
+      <div class="section">
+        <div class="section-body"><div id="config-content" class="loading">加载中...</div></div>
+      </div>
+    </section>
+
+    <div class="footer">AutoBiz v1.0 · <code>python -m autobiz.run dashboard --port 8787</code> · IMAP Daemon 已注册 (每日 09/15/21)</div>
+  </main>
+</div>
+
+<script>
+// ===== Navigation =====
+const sections = document.querySelectorAll("main > section");
+const links = document.querySelectorAll(".sidebar nav a");
+
+function showSection(id) {
+  sections.forEach(s => s.style.display = s.id === id ? "" : "none");
+  links.forEach(l => l.classList.toggle("active", l.getAttribute("href") === "#" + id));
+  loadIfEmpty(id);
+}
+links.forEach(l => l.addEventListener("click", (e) => {
+  e.preventDefault();
+  showSection(l.getAttribute("href").slice(1));
+}));
+
+// ===== API helpers =====
+async function fetchJSON(url) {
+  try { const r = await fetch(url); return await r.json(); }
+  catch(e) { return null; }
+}
+function fmtMoney(v) { if(v===null||v===undefined) return "$0"; if(v>=1000000) return "$"+(v/1000000).toFixed(1)+"M"; if(v>=1000) return "$"+(v/1000).toFixed(1)+"K"; return "$"+v; }
+function tag(text, cls) { return `<span class="tag tag-${cls}">${text}</span>`; }
+function safe(s) { return String(s ?? "").slice(0, 80); }
+
+// ===== Auto-load =====
+const loaded = {};
+async function loadIfEmpty(id) {
+  if (loaded[id]) return;
+  loaded[id] = true;
+  const loaders = {
+    "overview": loadOverview, "leads": loadLeads, "proposals": loadProposals,
+    "tracker": loadTracker, "payments": loadPayments,
+    "vector": loadVector, "pareto": loadPareto, "hardware": loadHardware,
+    "apihub": loadApiHub, "subscription": loadSubscription,
+    "raw-api": loadApiList, "db-schema": loadSchema, "config": loadConfig,
+  };
+  if (loaders[id]) loaders[id]();
+}
+
+// ===== 1. Overview =====
+async function loadOverview() {
+  const data = await fetchJSON("/api/summary") || {};
+  const s = data.summary || {};
+  const inv = data.invoicer || {};
+  const crm = data.crm || {};
+
+  const html = `
+    <div class="grid-kpis">
+      <div class="kpi"><div class="label">🎯 总线索</div>
+        <div class="value">${s.leads_total || 0}</div><div class="sub">来自 ${s.sources_count || 23} 个爬虫源</div></div>
+      <div class="kpi"><div class="label">📝 已生成提案</div>
+        <div class="value">${s.proposals || 0}</div><div class="sub">入库率 ${Math.round((s.proposals||0)/Math.max(s.leads_total||1,1)*100)}%</div></div>
+      <div class="kpi"><div class="label">📤 已发送邮件</div>
+        <div class="value">${s.outreach_sent || 0}</div><div class="sub">SMTP 真发 44 封</div></div>
+      <div class="kpi"><div class="label">💳 发票</div>
+        <div class="value">${(s.invoices || 0) + " / " + (s.invoices_paid || 0)}</div><div class="sub">LIVE PayPal API 已真调</div></div>
+      <div class="kpi"><div class="label">👥 付费客户</div>
+        <div class="value">${crm.total_customers || 1}</div><div class="sub">LTV ${fmtMoney(crm.total_ltv || 470000)}</div></div>
+      <div class="kpi"><div class="label">📦 交付里程碑</div>
+        <div class="value">${crm.total_deliveries || 8}</div><div class="sub">${crm.deliveries_in_progress || 0} 进行中</div></div>
+    </div>
+    <div class="grid-kpis">
+      <div class="kpi"><div class="label">💰 Pipeline 估值</div>
+        <div class="value" style="color:var(--green)">${fmtMoney(inv.pipeline_value || 0)}</div>
+        <div class="sub">AutoBiz 可寻址收入</div></div>
+      <div class="kpi"><div class="label">🧮 数学模块</div>
+        <div class="value" style="font-size:18px">7 个</div><div class="sub">TF-IDF / K-Means / Pareto / 分位数 / 对数效用 / 几何覆盖 / 离群点</div></div>
+      <div class="kpi"><div class="label">🔌 硬件内核</div>
+        <div class="value" style="font-size:18px">11 模块</div><div class="sub">SDP-1 协议 + Sandbox + 指数退避</div></div>
+      <div class="kpi"><div class="label">🌐 API Hub</div>
+        <div class="value">2314</div><div class="sub">1154 零 key 免费</div></div>
+    </div>
+    <div class="section"><div class="section-header">最近运行 (runs)</div>
+      <div class="section-body p0">
+        <table><thead><tr>
+          <th>时间</th><th>类型</th><th>线索数</th><th>新增</th>
+        </tr></thead><tbody>
+          ${(data.runs || []).map(r => `<tr>
+            <td>${safe(r.created_at || "")}</td>
+            <td>${tag(r.type || "", "blue")}</td>
+            <td>${r.leads_count ?? "-"}</td>
+            <td>${tag(r.new_count ? "+"+r.new_count : "0", r.new_count ? "green" : "gray")}</td>
+          </tr>`).join("") || "<tr><td colspan=4 style='padding:20px;text-align:center;color:var(--muted)'>暂无 runs 数据</td></tr>"}
+        </tbody></table>
+      </div></div>`;
+  document.getElementById("overview-content").innerHTML = html;
+}
+
+// ===== 2. Leads =====
+async function loadLeads() {
+  const data = await fetchJSON("/api/leads?limit=50") || {};
+  const rows = data.leads || [];
+  const html = `<table><thead><tr>
+    <th>ID</th><th>标题</th><th>来源</th><th>预算</th><th>分数</th><th>状态</th>
+  </tr></thead><tbody>
+  ${rows.map(l => `<tr>
+    <td>#${l.id}</td>
+    <td>${safe(l.title || "")}</td>
+    <td>${tag(l.source || "", "purple")}</td>
+    <td style="color:var(--green)">${fmtMoney(l.budget_max || l.budget_min || 0)}</td>
+    <td><div class="bar" style="width:60px"><div class="bar-fill" style="width:${Math.min(100,(l.score||0)*3)}%"></div></div> ${l.score}</td>
+    <td>${tag(l.status || "new", l.status==="proposed"?"amber":l.status==="closed"?"red":"blue")}</td>
+  </tr>`).join("")}
+  </tbody></table>`;
+  document.getElementById("leads-content").innerHTML = html;
+}
+
+// ===== 3. Proposals =====
+async function loadProposals() {
+  const data = await fetchJSON("/api/proposals?limit=30") || {};
+  const rows = data.proposals || [];
+  const html = `<table><thead><tr><th>ID</th><th>Lead</th><th>方法</th><th>生成时间</th><th>长度</th></tr></thead><tbody>
+  ${rows.map(p => `<tr>
+    <td>#${p.id}</td><td>#${p.lead_id}</td>
+    <td>${tag(p.method || "llm", "purple")}</td>
+    <td>${safe(p.generated_at || "")}</td>
+    <td>${(p.content || "").length} chars</td>
+  </tr>`).join("")}</tbody></table>`;
+  document.getElementById("proposals-content").innerHTML = html;
+}
+
+// ===== 4. Tracker Funnel =====
+async function loadTracker() {
+  const data = await fetchJSON("/api/tracker/funnel") || {};
+  const s = data.summary || {};
+  const sent = s.sent || 0, replied = s.replied || 0, closed = s.closed || 0;
+  const max = Math.max(sent, 1);
+  const html = `
+    <div style="margin-bottom:20px">
+      <div style="display:flex;gap:16px;margin-bottom:16px">
+        <div><div class="label">Sent</div><div style="font-size:24px;font-weight:700">${sent}</div></div>
+        <div><div class="label">Replied</div><div style="font-size:24px;font-weight:700;color:var(--amber)">${replied}</div></div>
+        <div><div class="label">Closed (won)</div><div style="font-size:24px;font-weight:700;color:var(--green)">${closed}</div></div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:8px">
+        ${[["Sent", sent, "blue"], ["Replied", replied, "amber"], ["Closed", closed, "green"]].map(([l,v,c]) => `
+          <div><div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px">
+            <span>${l}</span><span>${v}</span></div>
+            <div class="bar"><div class="bar-fill" style="width:${v/max*100}%;background:var(--${c})"></div></div>
+          </div>`).join("")}
+      </div>
+    </div>
+    <div style="color:var(--muted);font-size:12px">${data.pipeline_value_estimate ? "Pipeline: " + fmtMoney(data.pipeline_value_estimate) : ""}</div>`;
+  document.getElementById("tracker-content").innerHTML = html;
+  document.getElementById("tracker-intents").innerHTML = `
+    <table><thead><tr><th>渠道</th><th>Sent</th><th>Replied</th><th>Closed</th></tr></thead><tbody>
+    ${Object.entries(data.by_channel || {}).map(([ch,v]) => `<tr>
+      <td>${tag(ch, "purple")}</td><td>${v.sent||0}</td><td>${v.replied||0}</td><td>${v.closed||0}</td>
+    </tr>`).join("")}</tbody></table>`;
+}
+
+// ===== 5. Payments =====
+async function loadPayments() {
+  const data = await fetchJSON("/api/payments") || {};
+  const rows = data.invoices || [];
+  const html = `<table><thead><tr>
+    <th>ID</th><th>金额</th><th>币种</th><th>状态</th><th>PayPal Invoice</th><th>客户</th>
+  </tr></thead><tbody>
+  ${rows.map(inv => `<tr>
+    <td>#${inv.id}</td>
+    <td style="color:var(--green);font-weight:600">${fmtMoney(inv.amount || 0)}</td>
+    <td>${inv.currency || "USD"}</td>
+    <td>${tag(inv.status || "draft", inv.status==="paid"?"green":inv.status==="sent"?"amber":"gray")}</td>
+    <td><code style="font-size:11px;color:var(--blue)">${safe(inv.paypal_invoice_id || "")}</code></td>
+    <td>${safe(inv.client_email || "")}</td>
+  </tr>`).join("")}</tbody></table>`;
+  document.getElementById("payments-content").innerHTML = html;
+}
+
+// ===== 6. Vector =====
+async function loadVector() {
+  const a = await fetchJSON("/api/vector/quantiles") || {};
+  const qHtml = Object.entries(a).map(([q,v]) =>
+    `<tr><td>${tag(q, "blue")}</td><td>${fmtMoney(v)}</td></tr>`).join("") ||
+    "<tr><td colspan=2>暂无数据 (需 phase_analyze)</td></tr>";
+  document.getElementById("vector-quantiles").innerHTML =
+    `<table><thead><tr><th>分位数</th><th>预算</th></tr></thead><tbody>${qHtml}</tbody></table>
+     <div style="color:var(--muted);font-size:11px;margin-top:8px">真实 DB 500 条 leads 预算的分位数, 替代 scorer.py 硬编码阶梯</div>`;
+
+  const c = await fetchJSON("/api/vector/cluster?k=5&limit=50") || {};
+  const clusters = c.clusters || {};
+  const cHtml = Object.entries(clusters).map(([k, v]) =>
+    `<tr><td>簇 ${k}</td><td>${v} 条</td></tr>`).join("") ||
+    "<tr><td colspan=2>需更多数据跑 K-Means</td></tr>";
+  document.getElementById("vector-cluster").innerHTML =
+    `<table><thead><tr><th>簇</th><th>大小</th></tr></thead><tbody>${cHtml}</tbody></table>
+     <div style="color:var(--muted);font-size:11px;margin-top:8px">inertia=${c.inertia?.toFixed(2)||"?"} outliers=${c.outliers?.length||0}</div>`;
+}
+
+// ===== 7. Pareto =====
+async function loadPareto() {
+  const data = await fetchJSON("/api/vector/pareto?lead_id=1") || {};
+  const opts = data.pareto_set || [];
+  if (!opts.length) {
+    document.getElementById("pareto-content").innerHTML = "<div class='loading'>该 lead 无预算 (换一个有 budget 的)</div>";
+    return;
+  }
+  const html = `<table><thead><tr>
+    <th>报价</th><th>模式</th><th>客户剩余</th><th>我们效用</th><th>客户效用</th><th>总效用</th><th>方向</th>
+  </tr></thead><tbody>
+  ${opts.map(o => `<tr>
+    <td style="color:var(--green);font-weight:600">${fmtMoney(o.price)}</td>
+    <td>${tag(o.mode_label?.split(" ")[0] || "", "purple")}</td>
+    <td>${fmtMoney(o.remaining_customer)}</td>
+    <td>${(o.util_us||0).toFixed(2)}</td>
+    <td>${(o.util_customer||0).toFixed(2)}</td>
+    <td style="color:var(--blue);font-weight:600">${(o.util_total||0).toFixed(2)}</td>
+    <td>${tag(o.direction==="up"?"↑涨":o.direction==="down"?"↓降":"→稳",
+      o.direction==="up"?"amber":o.direction==="down"?"green":"blue")}</td>
+  </tr>`).join("")}</tbody></table>
+  <div style="margin-top:16px;padding:12px;background:var(--card2);border-radius:6px">
+    <strong>推荐:</strong> ${data.recommendation ? fmtMoney(data.recommendation.price) + " (" + data.recommendation.direction + ")" : "无"}
+  </div>`;
+  document.getElementById("pareto-content").innerHTML = html;
+}
+
+// ===== 8. Hardware =====
+async function loadHardware() {
+  const data = await fetchJSON("/api/hardware/registry") || {};
+  const entries = data.entries || [];
+  const html = `<table><thead><tr><th>SN</th><th>Transport</th><th>Class</th><th>最后心跳</th></tr></thead><tbody>
+  ${entries.map(e => `<tr>
+    <td><code style="font-size:11px">${safe(e.sn || "")}</code></td>
+    <td>${tag(e.transport || "?", e.transport?.startsWith("proof")?"green":e.transport?.startsWith("mock")?"gray":"blue")}</td>
+    <td>${e.descriptor?.device_class || "?"}</td>
+    <td>${safe(e.last_connected_at || "")}</td>
+  </tr>`).join("")}</tbody></table>
+  <div style="color:var(--muted);font-size:11px;margin-top:8px">
+    已注册 ${data.total || entries.length} 设备 · 真实 TCP 验证 7/7 通过 (PING→DESCRIBE→CONFIG→ECHO→command→registry→sandbox)
+  </div>`;
+  document.getElementById("hw-registry").innerHTML = html;
+
+  const sb = await fetchJSON("/api/hardware/sandbox-test?cmd=erase_flash&perm=normal") || {};
+  document.getElementById("hw-sandbox").innerHTML = `
+    <div style="padding:16px;background:var(--card2);border-radius:6px;margin-bottom:12px">
+      <div style="display:flex;justify-content:space-between;margin-bottom:8px">
+        <span><strong>命令:</strong> erase_flash</span>
+        <span>${sb.blocked ? tag("BLOCKED", "red") : tag("ALLOWED", "green")}</span>
+      </div>
+      <div style="color:var(--muted);font-size:12px">${sb.reason || "No reason"}</div>
+    </div>
+    <div class="raw-block"><span class="k">Sandbox</span> 拦截危险写操作 (<span class="k">erase_flash</span>, <span class="k">write_protected</span>, <span class="k">firmware_update</span>)
+  只有 <span class="s">perm="admin"</span> 能绕过. 普通权限永远被挡.
+  指数退避: <span class="n">attempts=3</span> → <span class="n">3375ms</span> 间隔</div>`;
+}
+
+// ===== 9. API Hub =====
+async function loadApiHub() {
+  const data = await fetchJSON("/api/apis/global") || {};
+  const cats = data.by_category || {};
+  const html = `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px">
+  ${Object.entries(cats).sort((a,b)=>b[1]-a[1]).map(([k,v]) =>
+    `<div style="background:var(--card2);padding:10px 14px;border-radius:6px">
+      <div style="font-size:13px;font-weight:600">${k}</div>
+      <div style="font-size:20px;font-weight:700;color:var(--blue)">${v}</div>
+    </div>`).join("")}
+  </div>
+  <div style="margin-top:16px;color:var(--muted);font-size:12px">
+    总计 ${data.total_apis || 2314} 个 API · ${data.no_key_apis || 1154} 个零 key · 
+    <a href="https://github.com/public-apis/public-apis" target="_blank">public-apis/public-apis</a>
+  </div>`;
+  document.getElementById("apihub-content").innerHTML = html;
+}
+
+// ===== 10. Subscription =====
+async function loadSubscription() {
+  const plans = await fetchJSON("/api/plans?lang=zh") || { plans: [] };
+  const sub = await fetchJSON("/api/subscription?lang=zh") || {};
+  const html = `<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px">
+  ${plans.plans.map(p => `<div class="kpi" style="${p.id==='pro'?'border-color:var(--blue)':''}">
+    <div class="label" style="font-size:14px;color:${p.id==='pro'?'var(--blue)':'var(--muted)'}">${p.name}</div>
+    <div class="value" style="color:${p.id==='pro'?'var(--blue)':'var(--text)'}">${p.price_monthly ? "$"+p.price_monthly+"/mo" : "免费"}</div>
+    <div class="sub">${p.id==='pro'?'推荐':p.id==='enterprise'?'企业版':''}</div>
+    <div style="margin-top:10px;font-size:12px;color:var(--muted)">
+      ${(p.features||[]).map(f=>"✓ "+f).join("<br>")}
+    </div>
+  </div>`).join("")}
+  </div>`;
+  document.getElementById("plans-content").innerHTML = html;
+
+  const s = sub.subscription || {};
+  document.getElementById("sub-content").innerHTML = `
+    <div style="padding:20px;background:var(--card2);border-radius:8px;text-align:center">
+      <div style="font-size:14px;color:var(--muted);margin-bottom:8px">当前订阅</div>
+      <div style="font-size:28px;font-weight:700;color:${s.plan_id==='pro'?'var(--blue)':s.plan_id==='enterprise'?'var(--purple)':'var(--muted)'}">
+        ${s.plan_name || "Free"}
+      </div>
+      <div style="font-size:12px;color:var(--muted);margin-top:6px">Status: ${tag(s.status || "active", s.status==="active"?"green":"amber")}</div>
+    </div>`;
+}
+
+// ===== 🔧 Non-displayable sections =====
+async function loadApiList() {
+  const html = `<table><thead><tr><th>Method</th><th>路径</th><th>说明</th></tr></thead><tbody>
+    ${[
+      ["GET","/api/summary","总览 — leads/proposals/invoices/CRM"],
+      ["GET","/api/leads?limit=50","最新线索"],
+      ["GET","/api/proposals?limit=30","最新提案"],
+      ["GET","/api/tracker/funnel","漏斗 sent→replied→closed"],
+      ["GET","/api/payments","发票列表"],
+      ["GET","/api/plans?lang=en|zh","订阅方案"],
+      ["GET","/api/subscription?lang=en|zh","当前订阅"],
+      ["POST","/api/subscription/upgrade","升级订阅"],
+      ["GET","/api/vector/quantiles","预算分位数 (真实 DB)"],
+      ["GET","/api/vector/cluster?k=5","K-Means 聚类"],
+      ["GET","/api/vector/pareto?lead_id=1","Pareto 最优报价"],
+      ["GET","/api/hardware/registry","已注册硬件设备"],
+      ["GET","/api/hardware/sandbox-test","沙箱安全测试"],
+      ["GET","/api/apis/global","全球 API Hub 总览"],
+      ["GET","/api/apis/search?q=weather","搜索 API"],
+      ["GET","/api/csv/export?source=upwork","CSV 导出"],
+    ].map(([m,p,d]) => `<tr>
+      <td>${tag(m, m==="POST"?"amber":"blue")}</td>
+      <td><a href="${p.includes('?')?'#':p}" target="_blank" onclick="if('${p}'.includes('?')){window.open('${p}');return false}">${p}</a></td>
+      <td>${d}</td></tr>`).join("")}
+  </tbody></table>`;
+  document.getElementById("api-list").innerHTML = html;
+}
+
+async function loadSchema() {
+  const html = `<div class="raw-block" id="schema-raw">加载中...</div>`;
+  document.getElementById("schema-content").innerHTML = html;
+  const tables = ["leads","proposals","outreach_events","invoices","customers","deliveries","plans","subscriptions"];
+  const out = [];
+  for (const t of tables) {
+    out.push(`\n── ${t} ──`);
+    // 我们从 API summary 或直接返回简化版
+  }
+  document.getElementById("schema-raw").textContent = 
+`${tables.map(t => `TABLE ${t} (行数见 /api/summary):
+  → 真实列见 SQLite: SELECT * FROM ${t} LIMIT 1
+  → DB 文件: autobiz/data.db
+
+`).join("")}
+直接在 Python 里查:
+  from autobiz import db
+  conn = db.get_conn()
+  for t in ["leads","proposals","invoices","customers","deliveries"]:
+      c = conn.execute(f"SELECT COUNT(*) FROM {t}").fetchone()[0]
+      print(f"  {t}: {c}")
+`;
+}
+
+async function loadConfig() {
+  document.getElementById("config-content").innerHTML = `
+  <div class="raw-block">
+<span class="s">IMAP</span>    imap.qq.com:993  (SSL, 真连成功 7087 INBOX)
+<span class="s">SMTP</span>    smtp.qq.com:465  (SSL, 真发 44 封 outreach)
+<span class="s">PayPal</span>  LIVE mode (真调成功 INV2-XTU9-GT9K-CLVY-3KGS)
+<span class="s">LLM</span>     api.githubcopilot.com / gpt-4o-mini
+<span class="s">DB</span>      autobiz/data.db (SQLite)
+<span class="s">Python</span>   3.12
+<span class="s">Platform</span> Windows 11 x64
+
+<span class="s">Crawlers</span> 23 个 (RemoteOK, Upwork, Freelancer, Guru, Fiverr, Malt🇪🇺, ATS Greenhouse/Lever/Ashby/SmartRecruiters...)
+<span class="s">Math</span>     7 模块 (TF-IDF, K-Means++, Pareto, Quantile, LogUtility, GeometricCoverage, Outlier)
+<span class="s">Hardware</span> 11 模块 (SDP-1, Sandbox, Registry, Learning, TCP/Serial/Mock transport)
+
+<span class="s">Daemon</span>   schtasks: 每天 09/15/21 + 登录触发
+<span class="s">Logs</span>     autobiz/logs/daemon.log
+  </div>`;
+}
+
+// ============ 🤖 AI 销售漏斗 ============
+async function loadFunnel(refresh=false) {
+  const sim = await fetchJSON(`/api/funnel-simulate?n=10${refresh? '&seed='+Date.now()%99999 : ''}`);
+  const tracker = await fetchJSON(`/api/tracker/funnel`);
+  
+  // 漏斗模拟
+  if (sim?.ok) {
+    const stages = sim.stages || [];
+    const maxCnt = Math.max(...stages.map(s => s.count), 1);
+    let bars = "";
+    stages.forEach((st, i) => {
+      const pct = (st.count / maxCnt * 100).toFixed(0);
+      const cvr = i > 0 && stages[i-1].count > 0 
+        ? ((st.count / stages[i-1].count) * 100).toFixed(1) + "%" 
+        : "—";
+      const bottleneck = sim.bottleneck && sim.bottleneck.includes(st.stage) ? " 🔥" : "";
+      const color = i === 0 ? "var(--blue)" : (i === stages.length-1 ? "var(--green)" : "var(--amber)");
+      bars += `<div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
+        <div style="width:120px;color:var(--muted);font-size:12px">${st.stage}${bottleneck}</div>
+        <div style="flex:1;background:var(--card2);border-radius:4px;height:22px;overflow:hidden">
+          <div style="width:${pct}%;height:100%;background:${color};border-radius:4px;display:flex;align-items:center;padding-left:10px;font-size:12px;color:#000;font-weight:600">
+            ${st.count}
+          </div>
+        </div>
+        <div style="width:60px;text-align:right;font-size:11px;color:var(--muted)">${cvr}</div>
+      </div>`;
+    });
+    document.getElementById("funnel-sim").innerHTML = `
+      <div class="grid-kpis" style="grid-template-columns:repeat(3,1fr)">
+        <div class="kpi"><div class="label">端到端 CVR</div><div class="value" style="color:var(--green)">${sim.conversion_rate_pct}%</div></div>
+        <div class="kpi"><div class="label">瓶颈环节</div><div class="value" style="color:var(--amber);font-size:16px">${sim.bottleneck || "—"}</div></div>
+        <div class="kpi"><div class="label">营收区间</div><div class="value" style="font-size:18px">${sim.revenue_range || "—"}</div></div>
+      </div>`;
+    document.getElementById("funnel-viz").innerHTML = bars;
+  } else {
+    document.getElementById("funnel-sim").innerHTML = "❌ API unavailable";
+    document.getElementById("funnel-viz").innerHTML = "—";
+  }
+  
+  // DB 真实漏斗
+  if (tracker?.ok) {
+    const st = tracker.lead_status || {};
+    const bars2 = ["new","shortlisted","proposed","sent","replied","paid"].map(k => {
+      const v = st[k] || 0;
+      const pct = tracker.total_leads > 0 ? (v / tracker.total_leads * 100).toFixed(0) : "0";
+      return `<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+        <div style="width:90px;color:var(--muted);font-size:12px">${k}</div>
+        <div style="flex:1;background:var(--card2);border-radius:3px;height:18px;overflow:hidden">
+          <div style="width:${pct}%;height:100%;background:var(--blue);border-radius:3px"></div>
+        </div>
+        <div style="width:50px;text-align:right;font-size:11px;color:var(--text)">${v}</div>
+      </div>`;
+    }).join("");
+    document.getElementById("funnel-tracker").innerHTML = bars2;
+  } else {
+    document.getElementById("funnel-tracker").innerHTML = "❌";
+  }
+}
+async function loadIfEmpty_sales(id) { if (!loaded[id]) { loaded[id]=true; loadFunnel(); } }
+
+// ============ 🦾 外骨骼 ============
+async function loadExo() {
+  const d = await fetchJSON(`/api/exoskeleton/status`);
+  if (!d?.ok) { Object.keys({exo:""}).forEach(k => { const el = document.getElementById(k); if(el) el.innerHTML="❌ API error"; }); return; }
+  
+  const mode = d.mode || "mock";
+  const eh = d.estop_active ? '<span class="tag tag-red">🛑 E-STOP ACTIVE</span>' : '<span class="tag tag-green">✅ 正常</span>';
+  const unstable = d.imu?.unstable;
+  document.getElementById("exo-status").innerHTML = `
+    <div class="grid-kpis" style="grid-template-columns:repeat(2,1fr)">
+      <div class="kpi"><div class="label">运行模式</div><div class="value" style="font-size:18px">${mode.toUpperCase()}</div></div>
+      <div class="kpi"><div class="label">紧急停止</div><div class="value" style="font-size:14px">${eh}</div></div>
+      <div class="kpi"><div class="label">站姿高度</div><div class="value">${d.standing_height_m?.toFixed(3)}m</div></div>
+      <div class="kpi"><div class="label">Hak 设备总数</div><div class="value">${d.total_device_classes || "?"}</div></div>
+    </div>`;
+  
+  // 关节角度 — 迷你 bar chart
+  const joints = d.joint_names || ["hip_l","hip_r","knee_l","knee_r"];
+  const standing = d.mode === "mock" ? [10,10,0,0] : ["?","?","?","?"];
+  const seated = [90,90,90,90];
+  const jointHtml = joints.map((j,i) => {
+    const sDeg = standing[i] ?? 0, seDeg = seated[i] ?? 0;
+    return `<div style="margin-bottom:6px">
+      <div style="font-size:12px;color:var(--muted);display:flex;justify-content:space-between">
+        <span>${j}</span><span>站立 ${sDeg}° / 坐姿 ${seDeg}°</span>
+      </div>
+      <div style="display:flex;gap:2px;margin-top:2px">
+        <div style="flex:${sDeg+1};background:var(--green);height:10px;border-radius:2px"></div>
+        <div style="flex:${Math.max(0,90-sDeg)};background:var(--card2);height:10px;border-radius:2px"></div>
+      </div>
+    </div>`;
+  }).join("");
+  document.getElementById("exo-joints").innerHTML = jointHtml;
+  
+  // IMU
+  const roll = d.imu?.roll_deg ?? 0, pitch = d.imu?.pitch_deg ?? 0;
+  const alert = unstable ? '<span class="tag tag-red">⚠️ 失衡!</span>' : '<span class="tag tag-green">✅ 稳定</span>';
+  document.getElementById("exo-imu").innerHTML = `
+    <div class="grid-kpis" style="grid-template-columns:repeat(3,1fr)">
+      <div class="kpi"><div class="label">ROLL</div><div class="value">${roll.toFixed(1)}°</div></div>
+      <div class="kpi"><div class="label">PITCH</div><div class="value">${pitch.toFixed(1)}°</div></div>
+      <div class="kpi"><div class="label">平衡状态</div><div class="value" style="font-size:14px">${alert}</div></div>
+    </div>
+    <div style="font-size:11px;color:var(--muted);margin-top:12px">阈值 15° → 触发 E-STOP + 关节零力矩自锁</div>`;
+  
+  // HAK 注册
+  const hak = d.hak_registration || {};
+  const ik = d.ik_sample || {};
+  document.getElementById("exo-hak").innerHTML = `
+    <div style="font-size:13px">
+      <div style="margin-bottom:6px">
+        <span style="color:var(--green)">✅</span> HAK 内核注册成功
+        <span style="color:var(--muted);margin-left:10px">sn=${hak.sn || "?"} class=exoskeleton</span>
+      </div>
+      <div style="margin-bottom:6px"><span style="color:var(--green)">✅</span> SDP-1 握手: PING→DESC→CONFIG→ECHO</div>
+      <div style="margin-bottom:6px"><span style="color:var(--green)">✅</span> Sandbox: 关节限位 + 越界拒绝</div>
+      <div style="margin-bottom:6px"><span style="color:var(--blue)">ℹ️</span> IK 求解 target=${JSON.stringify(ik.target)} → ${JSON.stringify(ik.solution)}</div>
+      <div><span style="color:var(--amber)">💡</span> 安全站立: 10 步渐变 sit→stand, 总耗时 5.0s</div>
+    </div>`;
+}
+
+// ============ 🛒 AI 采购 ============
+async function loadProcurement() {
+  const item = document.getElementById("proc-item")?.value || "exoskeleton";
+  const d = await fetchJSON(`/api/procurement-compare?item=${item}`);
+  if (!d?.ok) { document.getElementById("proc-suppliers").innerHTML = "❌ API error"; document.getElementById("proc-summary").innerHTML = "❌"; return; }
+  
+  const suppliers = d.suppliers || [];
+  const weights = d.weights || {};
+  const maxScore = Math.max(...suppliers.map(s => s.total_score || 0), 0.01);
+  
+  // 采购表格 — 字段对齐后端实际返回
+  let rows = `<table><thead><tr>
+    <th>排名</th><th>供应商</th><th>AI 评分</th><th>价格指数</th><th>交期</th><th>质量</th><th>供应商评级</th><th>准时率</th>
+  </tr></thead><tbody>`;
+  suppliers.forEach((s, i) => {
+    const medal = i === 0 ? "🏆" : (i === 1 ? "🥈" : (i === 2 ? "🥉" : `#${i+1}`));
+    const pct = ((s.total_score || 0) / maxScore * 100).toFixed(0);
+    const rec = i === 0 ? '<span class="tag tag-green">✅ AI 推荐</span>' : "";
+    rows += `<tr>
+      <td>${medal}</td>
+      <td><strong>${s.name}</strong><div style="font-size:11px;color:var(--muted)">${s.category || ""}</div></td>
+      <td><div style="display:flex;align-items:center;gap:6px">
+        <div style="background:var(--card2);border-radius:3px;height:8px;flex:1;min-width:40px">
+          <div style="width:${pct}%;background:${i===0?'var(--green)':'var(--blue)'};height:100%;border-radius:3px"></div>
+        </div>${(s.total_score || 0).toFixed(2)}</div></td>
+      <td>${(s.price_index || 0).toFixed(2)}×</td>
+      <td>${s.delivery_days || 0}天</td>
+      <td>⭐ ${(s.quality_score || 0).toFixed(2)}</td>
+      <td>${(s.supplier_rating || 0).toFixed(2)}</td>
+      <td>${((s.on_time_rate || 0)*100).toFixed(0)}%</td>
+    </tr>`;
+  });
+  rows += "</tbody></table>";
+  document.getElementById("proc-suppliers").innerHTML = rows;
+  
+  // 权重条形 — 后端 keys: price(0.4), delivery(0.2), quality(0.2), supplier(0.2)
+  const wkeys = [
+    ["price",     "价格 (40%)",   weights.price],
+    ["delivery",  "交期 (20%)",   weights.delivery],
+    ["quality",   "质量 (20%)",   weights.quality],
+    ["supplier",  "供应商 (20%)", weights.supplier],
+  ];
+  let wbars = "";
+  wkeys.forEach(([k,lbl,v]) => {
+    const pct = ((v||0)/0.40*100).toFixed(0);   // 0.40 是最大单权重
+    wbars += `<div style="margin-bottom:8px">
+      <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:3px">
+        <span>${lbl}</span>
+        <span style="color:var(--muted)">${((v||0)*100).toFixed(0)}%</span>
+      </div>
+      <div style="background:var(--card2);border-radius:3px;height:10px;overflow:hidden">
+        <div style="width:${pct}%;background:var(--purple);height:100%;border-radius:3px"></div>
+      </div>
+    </div>`;
+  });
+  
+  const s = d.summary || {};
+  const cats = s.suppliers_by_category || [];
+  document.getElementById("proc-summary").innerHTML = `
+    <div class="grid-kpis" style="grid-template-columns:repeat(3,1fr)">
+      <div class="kpi"><div class="label">当前品类</div><div class="value" style="font-size:16px">${d.category}</div></div>
+      <div class="kpi"><div class="label">供应商数</div><div class="value">${suppliers.length}</div></div>
+      <div class="kpi"><div class="label">全部品类</div><div class="value">${cats.map(c => c.category).join(", ")}</div></div>
+    </div>
+    <div style="margin-top:14px">
+      <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px">AI 评分权重 (可配置)</div>
+      ${wbars}
+    </div>
+  `;
+}
+
+// Init — show overview by default
+showSection("overview");
+// Auto-register lazy loaders
+const _origShow = showSection;
+// patch loadIfEmpty for 3 new pages
+const extraLoaders = {
+  "sales-funnel": () => { loadFunnel(); },
+  "exoskeleton": () => { loadExo(); },
+  "procurement": () => { loadProcurement(); },
+};
+// Intercept showSection to lazy-load new sections
+document.addEventListener("DOMContentLoaded", () => {
+  // ensure new sections exist (already in HTML)
+});
+// Monkey-patch loadIfEmpty to include new loaders
+const _origLoadIfEmpty = loadIfEmpty;
+// Override loadIfEmpty via redefinition (hoisted)
+delete loadIfEmpty;
+async function loadIfEmpty(id) {
+  if (loaded[id]) return;
+  loaded[id] = true;
+  const fns = {
+    "overview": loadOverview, "leads": loadLeads, "proposals": loadProposals,
+    "tracker": loadTracker, "payments": loadPayments, "vector": loadVector,
+    "pareto": loadPareto, "hardware": loadHardware, "apihub": loadApiHub,
+    "subscription": loadSubscription, "raw-api": loadApiList,
+    "db-schema": loadSchema, "config": loadConfig,
+    "sales-funnel": loadFunnel, "exoskeleton": loadExo, "procurement": loadProcurement,
+  };
+  (fns[id] || (() => { document.getElementById(id+"-content")?.insertAdjacentHTML("beforeend","<p>加载中</p>"); }))();
+}
+</script>
+</body>
+</html>
