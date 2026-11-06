@@ -1168,31 +1168,6 @@ class Handler(BaseHTTPRequestHandler):
                 "weights": _pr.PRICING_WEIGHTS,
                 "summary": summary,
             })
-            return            ctl = ExoskeletonController(mode="mock")
-            # 快速模拟站姿
-            ctl.set_all_joints(STANDING_THETA)
-            fk_x, fk_y = _leg_fk(*STANDING_THETA[:2])
-            hak = register_with_hak_kernel()
-            self._json({
-                "ok": True,
-                "mode": ctl.mode,
-                "joint_names": JOINT_NAMES,
-                "standing_height_m": round(fk_y, 3),
-                "seated_height_m": round(_leg_fk(*SEATED_THETA[:2])[1], 3),
-                "estop_active": ctl.estop_active,
-                "imu": {
-                    "roll_deg": ctl.imu.roll_deg,
-                    "pitch_deg": ctl.imu.pitch_deg,
-                    "unstable": ctl.imu.is_unstable(),
-                },
-                "hak_registration": hak,
-                "ik_sample": {
-                    "target": [0.30, 0.55],
-                    "solution": inverse_kinematics([0.30, 0.55, 0.55]),
-                },
-                "standing_trajectory_steps": 10,
-                "total_device_classes": hak.get("total_devices"),
-            })
             return
 
         if path == "/api/top-lead-five-dim":
@@ -1589,43 +1564,18 @@ class Handler(BaseHTTPRequestHandler):
                 })
             except Exception as e:
                 self._json({"ok": False, "error": str(e)}, 500)
-            return                result = eng.compose(task)
-                self._json(result)
-            except Exception as e:
-                self._json({"ok": False, "error": str(e)}, 500)
-            return                result = compose_task(task, timeout=timeout)
-                self._json(result)
-            except Exception as e:
-                self._json({"ok": False, "error": str(e)}, 500)
-            return                result = plan_task(task)
-                plan = result["plan"]
-                # 序列化 pipeline steps 和 triggers (去掉 function 引用)
-                steps = [{"skill": s.skill, "capability": s.capability,
-                          "op": s.op, "step_id": s.step_id,
-                          "depends_on": s.depends_on}
-                         for s in result["pipeline"].steps]
-                triggers = [{"watch": f"{tg.watch_skill}.{tg.watch_cap}",
-                             "action": f"{tg.action_op} {tg.action_skill}.{tg.action_cap}",
-                             "level": tg.level, "thresholds": tg.threshold()}
-                            for tg in result["triggers"]]
-                self._json({
-                    "ok": True, "task": task,
-                    "plan_type": plan["type"],
-                    "pipeline_steps": steps,
-                    "triggers": triggers,
-                    "skill_ids": plan["skill_ids"],
-                })
-            except Exception as e:
-                self._json({"ok": False, "error": str(e)}, 500)
             return
 
-        # ---- 售后工单 GET ----
         m = re.match(r"^/api/tickets/(\d+)$", path)
         if m:
             try:
                 from . import crm
             except ImportError:
                 crm = None
+            if crm is None:
+                self._json({"ok": False, "degraded": True, "module_missing": "crm",
+                           "ticket_id": int(m.group(1))})
+                return
             t = crm.get_ticket(int(m.group(1)))
             if t: self._json(t)
             else: self._json({"error": "not found"}, 404)
@@ -1636,6 +1586,10 @@ class Handler(BaseHTTPRequestHandler):
                 from . import crm
             except ImportError:
                 crm = None
+            if crm is None:
+                self._json({"ok": True, "degraded": True, "module_missing": "crm",
+                           "note": "crm module missing — no ticket stats available"})
+                return
             self._json(crm.ticket_stats())
             return
 
@@ -1644,6 +1598,11 @@ class Handler(BaseHTTPRequestHandler):
                 from . import crm
             except ImportError:
                 crm = None
+            if crm is None:
+                self._json({"ok": True, "degraded": True, "module_missing": "crm",
+                           "tickets": [], "stats": {},
+                           "note": "crm module missing — no tickets available"})
+                return
             q = parse_qs(u.query)
             st = (q.get("status") or [""])[0]
             ct = (q.get("category") or [""])[0]
