@@ -1449,6 +1449,54 @@ class Handler(BaseHTTPRequestHandler):
                 self._json({"ok": False, "error": str(e)}, 500)
             return
 
+        # ========== HARDWARE COMPOSER (Pipeline + Trigger 编排) ==========
+        if path == "/api/hardware/orchestrate":
+            """完整编排: task → Pipeline + Triggers → 执行报告."""
+            try:
+                from .hardware.composer import compose_task
+                qs = parse_qs(u.query)
+                task = (qs.get("task") or [""])[0]
+                timeout = float((qs.get("timeout") or ["10.0"])[0])
+                if not task:
+                    self._json({"ok": False, "error": "task= required"})
+                    return
+                result = compose_task(task, timeout=timeout)
+                self._json(result)
+            except Exception as e:
+                self._json({"ok": False, "error": str(e)}, 500)
+            return
+
+        if path == "/api/hardware/plan":
+            """Dry-run 规划: task → Pipeline + Trigger 草案 (不执行)."""
+            try:
+                from .hardware.composer import plan_task
+                qs = parse_qs(u.query)
+                task = (qs.get("task") or [""])[0]
+                if not task:
+                    self._json({"ok": False, "error": "task= required"})
+                    return
+                result = plan_task(task)
+                plan = result["plan"]
+                # 序列化 pipeline steps 和 triggers (去掉 function 引用)
+                steps = [{"skill": s.skill, "capability": s.capability,
+                          "op": s.op, "step_id": s.step_id,
+                          "depends_on": s.depends_on}
+                         for s in result["pipeline"].steps]
+                triggers = [{"watch": f"{tg.watch_skill}.{tg.watch_cap}",
+                             "action": f"{tg.action_op} {tg.action_skill}.{tg.action_cap}",
+                             "level": tg.level, "thresholds": tg.threshold()}
+                            for tg in result["triggers"]]
+                self._json({
+                    "ok": True, "task": task,
+                    "plan_type": plan["type"],
+                    "pipeline_steps": steps,
+                    "triggers": triggers,
+                    "skill_ids": plan["skill_ids"],
+                })
+            except Exception as e:
+                self._json({"ok": False, "error": str(e)}, 500)
+            return
+
         # ---- 售后工单 GET ----
         m = re.match(r"^/api/tickets/(\d+)$", path)
         if m:
