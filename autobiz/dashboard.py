@@ -771,7 +771,7 @@ class Handler(BaseHTTPRequestHandler):
 
         if path == "/api/vector/quantiles":
             """真实 DB 预算分位数 (替代手调阶梯权重)。"""
-            from .ai.vector import percentile_buckets, quantile_rank
+            from .ai.vector import percentile_buckets
             from . import db as _db
             rows = _db.get_conn().execute(
                 "SELECT budget_max, budget_min FROM leads WHERE COALESCE(budget_max, budget_min, 0) > 0 LIMIT 500"
@@ -1079,7 +1079,7 @@ class Handler(BaseHTTPRequestHandler):
             """外骨骼控制器状态 + HAK v2.0 注册信息。"""
             from .hardware.exoskeleton import (
                 ExoskeletonController, register_with_hak_kernel,
-                _leg_fk, inverse_kinematics, IMUReading,
+                _leg_fk, inverse_kinematics,
                 JOINT_NAMES, STANDING_THETA, SEATED_THETA,
             )
             ctl = ExoskeletonController(mode="mock")
@@ -1215,6 +1215,83 @@ class Handler(BaseHTTPRequestHandler):
                         "meta": meta.__dict__})
             return
 
+        if path == "/api/market/proxy":
+            """代理管理 — GET=当前状态, POST=刷新代理 (Clash/V2Ray 启动后可调)."""
+            u = urlparse(self.path); q = parse_qs(u.query)
+            from .market_data import (
+                refresh_proxy, _PROXY_URL as _cur_url, _provider_ok,
+                _detect_proxy,
+            )
+            # 读取当前状态
+            try:
+                import winreg as _wr
+                try:
+                    with _wr.OpenKey(_wr.HKEY_CURRENT_USER,
+                                     r"Software\Microsoft\Windows\CurrentVersion\Internet Settings") as _k:
+                        _en = _wr.QueryValueEx(_k, "ProxyEnable")[0]
+                        _sv = _wr.QueryValueEx(_k, "ProxyServer")[0]
+                        reg_state = {"proxy_enable": _en, "proxy_server": _sv}
+                except Exception:
+                    reg_state = {"proxy_enable": None, "proxy_server": None}
+            except Exception:
+                reg_state = {"error": "winreg unavailable"}
+
+            env_proxy = {k: os.environ.get(k) for k in (
+                "AUTOZONE_PROXY", "HTTPS_PROXY", "https_proxy",
+                "HTTP_PROXY", "http_proxy", "ALL_PROXY", "all_proxy"
+            ) if os.environ.get(k)}
+
+            self._json({
+                "ok": True,
+                "proxy_url_current": _cur_url,
+                "proxy_url_detected": _detect_proxy(),
+                "env_proxy": env_proxy,
+                "registry": reg_state,
+                "provider_ok": {k: {"ok": v[0], "ts": v[1]} for k, v in _provider_ok.items()},
+                "hint": "POST /api/market/proxy 可强制刷新 (Clash/V2Ray 启动后)",
+            })
+            return
+
+        if path == "/api/market/health":
+            """Provider 健康度监控 — 顺序探测, 1s/probe, ~6s max (快失败则更短)."""
+            from .market_data import _provider_ok, _try_provider_quote, DEFAULT_SYMBOLS
+            import time as _t
+
+            def _probe_once(provider, sym_def):
+                t0 = _t.time()
+                try:
+                    r = _try_provider_quote(provider, sym_def)
+                    dt = round((_t.time() - t0) * 1000, 1)
+                    return provider, {"ok": bool(r and r.get("price", 0) > 0),
+                                      "latency_ms": dt,
+                                      "price": r.get("price") if r else None}
+                except Exception as e:
+                    dt = round((_t.time() - t0) * 1000, 1)
+                    return provider, {"ok": False, "latency_ms": dt,
+                                      "error": type(e).__name__}
+
+            results = {}
+            test_crypto = DEFAULT_SYMBOLS[0]   # BTCUSDT
+            test_stock = DEFAULT_SYMBOLS[4]    # AAPL
+            t_start = _t.time()
+
+            for prov in ("binance_vision", "gate_io", "coingecko"):
+                p, r = _probe_once(prov, test_crypto)
+                results[p] = r
+            for prov in ("eastmoney", "sina", "tencent"):
+                p, r = _probe_once(prov, test_stock)
+                results[p] = r
+
+            elapsed = round(_t.time() - t_start, 2)
+            self._json({
+                "ok": True,
+                "timestamp": _t.time(),
+                "elapsed_sec": elapsed,
+                "provider_ok_cache": {k: {"ok": v[0]} for k, v in _provider_ok.items()},
+                "live_check": results,
+            })
+            return
+
         if path == "/api/sse/market":
             """SSE — tick-stock-panel 实时 tick 推送。"""
             import json as _j
@@ -1239,8 +1316,7 @@ class Handler(BaseHTTPRequestHandler):
             return
 
         if path.startswith("/api/csv/export"):
-            """CSV 导出: ?source=upwork 或 ?status=shortlisted 或全量。"""
-            from . import csv_export as _ce
+            """CSV 导出: ?source=upwork 或 ?status=shortlisted 或全量."""
             import io, csv as _csv_mod
             qs = parse_qs(u.query)
             source = (qs.get("source") or [""])[0]
@@ -1377,6 +1453,8 @@ class Handler(BaseHTTPRequestHandler):
                     "classes": sorted(by_class.keys()),
                     "by_class": {cls: {"count": len(n), "sample_skills": n[:5]}
                                  for cls, n in by_class.items()},
+                    "by_class_names": by_class,
+                    "names": sorted([n for ns in by_class.values() for n in ns]),
                     "live_reads": samples,
                     "custom_skills": custom_list,
                 })
@@ -1548,6 +1626,31 @@ class Handler(BaseHTTPRequestHandler):
             body = json.loads(raw or b"{}")
         except Exception:
             self._json({"error": "bad json"}, 400)
+            return
+
+        # ========== 代理刷新 (Clash/V2Ray 启动后) ==========
+        if u.path == "/api/market/proxy":
+            """POST: 强制刷新代理配置 (重新读 env + 注册表 + TCP 测试).
+            可选 body: {"proxy_url": "http://127.0.0.1:7890"} 临时覆盖
+            """
+            from .market_data import refresh_proxy, _provider_ok
+            # 如果 body 里显式指定了代理 URL，临时设 env 让 detect 读到
+            explicit_url = body.get("proxy_url") if body else None
+            if explicit_url:
+                os.environ["AUTOZONE_PROXY"] = explicit_url
+                print(f"[dashboard] POST /api/market/proxy → set AUTOZONE_PROXY={explicit_url}", flush=True)
+            try:
+                result = refresh_proxy()
+                # 刷新后清掉显式覆盖 (下次 detect 不会再误读)
+                if explicit_url:
+                    del os.environ["AUTOZONE_PROXY"]
+                self._json({
+                    "ok": True,
+                    "result": result,
+                    "provider_ok_cache": {k: {"ok": v[0]} for k, v in _provider_ok.items()},
+                })
+            except Exception as e:
+                self._json({"ok": False, "error": str(e)}, 500)
             return
 
         # ========== HARDWARE SKILL FACTORY (运行时动态注册) ==========
@@ -1754,7 +1857,6 @@ class Handler(BaseHTTPRequestHandler):
             """手动发一封邮件（指定 proposal_id）。"""
             from .outreach import EmailChannel
             from . import db as _db
-            import json as _json
             try:
                 lead_row = _db.get_lead(int(body["lead_id"]))
                 prop_row = _db.proposals_for(int(body["proposal_id"]))
@@ -1978,7 +2080,6 @@ class Handler(BaseHTTPRequestHandler):
                 self._json({"error": f"订阅墙：CSV 导出限额 {csv_limit} 行，当前请求被拦截"}, 403)
                 return
             path = export_proposals_csv(format=fmt, limit=lim)
-            import os
             self._json({"ok": True, "path": path, "size": os.path.getsize(path), "format": fmt, "limit": lim})
             return
 

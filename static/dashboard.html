@@ -763,11 +763,12 @@ async function loadHwSkills() {
   }).join("");
   document.getElementById("hw-skills-classes").innerHTML = clsHtml;
 
-  // Skill 卡片网格 (按 class 分组, 每组最多显示 8 个 + "全部展开"按钮)
-  renderSkillGrid(classes);
+  // Skill 卡片网格 — 按 class 分组, 每组最多显示 8 个 + "全部展开"按钮
+  renderSkillGrid(data);
 }
 
-function renderSkillGrid(classes, searchResults) {
+// Skill 卡片网格 — 按 class 分组 (数据已在 loadHwSkills 的 data 里, 不再二次 fetch)
+function renderSkillGrid(data, searchResults) {
   const grid = document.getElementById("hw-skills-grid");
   if (searchResults) {
     // 搜索结果
@@ -780,41 +781,36 @@ function renderSkillGrid(classes, searchResults) {
         style="background:var(--card2);padding:8px 12px;border-radius:6px;cursor:pointer;margin-bottom:6px;border-left:3px solid var(--blue);display:flex;justify-content:space-between;align-items:center">
         <div>
           <div style="font-size:12px;font-weight:600">${safe(m.skill)}</div>
-          <div style="font-size:10px;color:var(--muted)">${safe(m.device_class)} · ${(m.capabilities||[]).slice(0,3).join(", ")}</div>
+          <div style="font-size:10px;color:var(--muted)">${safe(m.device_class || "")} · ${(m.capabilities||[]).slice(0,3).join(", ")}</div>
         </div>
         <div style="font-size:11px;color:var(--blue);font-weight:600">score=${m.score}</div>
       </div>`).join("");
     return;
   }
-  // 按 class 分组显示
-  const names = window._hwSkillNames || [];
-  fetchJSON("/api/hardware/skills").then(d => {
-    if (!d) return;
-    const html = Object.entries(classes).sort((a,b)=>b[1]-a[1]).map(([cls, count]) => {
-      const classNames = (d.names || []).filter(n => {
-        // names API? 直接从 by_class 取
-        return true; // fallback, 我们从 search 走更好
-      });
-      const namesForClass = (d.by_class_names || {})[cls] || [];
-      const show = namesForClass.slice(0, 8);
-      const extra = Math.max(0, namesForClass.length - 8);
-      return `<div style="margin-bottom:14px">
-        <div style="font-size:12px;color:var(--muted);margin-bottom:6px;font-weight:600">${cls} <span style="font-weight:400">(${count})</span></div>
-        <div style="display:flex;flex-wrap:wrap;gap:4px">
-          ${show.map(n => `<span onclick="showHwSkillDetail('${safe(n)}')"
-            style="background:var(--card2);padding:4px 8px;border-radius:4px;font-size:11px;cursor:pointer;border:1px solid var(--border)">${safe(n)}</span>`).join("")}
-          ${extra > 0 ? `<span style="font-size:11px;color:var(--muted);padding:4px 8px">+${extra} 更多</span>` : ""}
-        </div></div>`;
-    }).join("");
-    grid.innerHTML = html;
-  });
+  // 按 class 分组显示 (直接用 data.by_class_names — 已经在 /api/hardware/skills 返回)
+  const bcn = (data && data.by_class_names) || {};
+  const html = Object.entries(bcn).sort((a,b)=>b[1].length-a[1].length).map(([cls, names]) => {
+    const show = names.slice(0, 8);
+    const extra = Math.max(0, names.length - 8);
+    return `<div style="margin-bottom:14px">
+      <div style="font-size:12px;color:var(--muted);margin-bottom:6px;font-weight:600">${cls} <span style="font-weight:400">(${names.length})</span></div>
+      <div style="display:flex;flex-wrap:wrap;gap:4px">
+        ${show.map(n => `<span onclick="showHwSkillDetail('${safe(n)}')"
+          style="background:var(--card2);padding:4px 8px;border-radius:4px;font-size:11px;cursor:pointer;border:1px solid var(--border)">${safe(n)}</span>`).join("")}
+        ${extra > 0 ? `<span style="font-size:11px;color:var(--muted);padding:4px 8px">+${extra} 更多</span>` : ""}
+      </div></div>`;
+  }).join("");
+  grid.innerHTML = html || `<div style="color:var(--muted);font-size:12px;padding:20px;text-align:center">加载失败</div>`;
 }
 
 async function searchHwSkill() {
   const kw = (document.getElementById("hw-skill-search").value || "").trim();
   if (!kw) { loadHwSkills(); return; }
-  const data = await fetchJSON(`/api/hardware/skills/search/${encodeURIComponent(kw)}`) || {};
-  renderSkillGrid(null, data.results || []);
+  if (window._hwSearchTimer) clearTimeout(window._hwSearchTimer);
+  window._hwSearchTimer = setTimeout(async () => {
+    const data = await fetchJSON(`/api/hardware/skills/search/${encodeURIComponent(kw)}`) || {};
+    renderSkillGrid(null, data.results || []);
+  }, 300);
 }
 
 async function showHwSkillDetail(name) {

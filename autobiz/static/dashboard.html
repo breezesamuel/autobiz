@@ -144,6 +144,7 @@ tbody tr:last-child td { border-bottom: none; }
       <a href="#sales-funnel">🤖 AI 销售漏斗</a>
       <a href="#exoskeleton">🦾 外骨骼控制</a>
       <a href="#procurement">🛒 AI 采购比价</a>
+      <a href="#tick-panel" onclick="ensureMarketInit()">📈 tick-stock-panel</a>
     </nav>
     <div class="section-label">🌐 工具</div>
     <nav>
@@ -235,12 +236,87 @@ tbody tr:last-child td { border-bottom: none; }
     <!-- ============ 🔌 硬件 ============ -->
     <section id="hardware" style="display:none">
       <div class="page-title">🔌 自主硬件内核</div>
-      <div class="page-sub">SDP-1 协议 + 引脚贪心 + 安全沙箱 + 指数退避自适应</div>
+      <div class="page-sub">SDP-1 协议 + 引脚贪心 + 安全沙箱 + 指数退避自适应 · <strong style="color:var(--blue)">HAK v2.0: 120 skills runtime</strong></div>
       <div class="split">
         <div class="section"><div class="section-header">已注册设备</div>
           <div class="section-body p0"><div id="hw-registry" class="loading">加载中...</div></div></div>
         <div class="section"><div class="section-header">Sandbox 安全测试</div>
           <div class="section-body"><div id="hw-sandbox" class="loading">加载中...</div></div></div>
+      </div>
+
+      <!-- HAK v2.0 Skills Runtime -->
+      <div class="section" style="margin-top:16px">
+        <div class="section-header">🧠 HAK v2.0 Skills Runtime
+          <span class="tag tag-blue" id="hw-skills-count">加载中...</span>
+        </div>
+        <div class="section-body">
+          <div class="split">
+            <div style="flex:1.3">
+              <div style="margin-bottom:10px;display:flex;gap:8px;align-items:center">
+                <input id="hw-skill-search" placeholder="🔍 搜索 skill 能力 (temperature, motor, heart...)"
+                  style="flex:1;background:var(--card2);color:var(--text);border:1px solid var(--border);padding:8px 12px;border-radius:6px;font-size:13px"
+                  onkeyup="if(event.key==='Enter')searchHwSkill()">
+                <button class="btn" onclick="searchHwSkill()">搜索</button>
+                <button class="btn btn-ghost" onclick="loadHwSkills()">🔄 重置</button>
+              </div>
+              <div id="hw-skills-grid" style="max-height:420px;overflow-y:auto"></div>
+            </div>
+            <div style="flex:1">
+              <div style="margin-bottom:10px;font-size:13px;color:var(--muted)">📊 按 Class 分布</div>
+              <div id="hw-skills-classes" style="display:grid;grid-template-columns:repeat(2,1fr);gap:6px"></div>
+              <div style="margin:16px 0 10px;font-size:13px;color:var(--muted)">🎯 Task → Skill Compose</div>
+              <div style="display:flex;gap:8px;margin-bottom:8px">
+                <input id="hw-compose-task" placeholder="如: patient monitoring, safety protection"
+                  style="flex:1;background:var(--card2);color:var(--text);border:1px solid var(--border);padding:6px 10px;border-radius:6px;font-size:12px">
+                <button class="btn" onclick="runHwCompose()">Compose</button>
+              </div>
+              <div id="hw-compose-result" style="font-size:12px"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Skill 详情 Modal -->
+      <div id="hw-skill-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:9999;align-items:center;justify-content:center" onclick="if(event.target.id==='hw-skill-modal')document.getElementById('hw-skill-modal').style.display='none'">
+        <div style="background:var(--card);border:1px solid var(--border);border-radius:10px;max-width:560px;width:90%;max-height:80vh;overflow-y:auto;padding:24px">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+            <div id="hw-modal-title" style="font-size:18px;font-weight:700"></div>
+            <button class="btn btn-ghost" onclick="document.getElementById('hw-skill-modal').style.display='none'">✕</button>
+          </div>
+          <div id="hw-modal-body"></div>
+        </div>
+      </div>
+
+      <!-- 自定义 Skill 注册 -->
+      <div class="section" style="margin-top:16px">
+        <div class="section-header">🛠️ 运行时自定义 Skill
+          <span class="tag tag-gray">进程内 (重启丢失)</span>
+        </div>
+        <div class="section-body">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+            <div>
+              <div style="font-size:13px;color:var(--muted);margin-bottom:6px">Skill Name</div>
+              <input id="hw-custom-name" placeholder="my_custom_sensor"
+                style="width:100%;background:var(--card2);color:var(--text);border:1px solid var(--border);padding:6px 10px;border-radius:6px;font-size:12px;margin-bottom:10px">
+              <div style="font-size:13px;color:var(--muted);margin-bottom:6px">Device Class</div>
+              <select id="hw-custom-class"
+                style="width:100%;background:var(--card2);color:var(--text);border:1px solid var(--border);padding:6px 10px;border-radius:6px;font-size:12px;margin-bottom:10px">
+                <option>sensor</option><option>actuator</option><option>io</option><option>robot</option>
+                <option>smart_home</option><option>industrial</option><option>medical</option><option>vehicle</option>
+                <option>energy</option><option>gateway</option><option>exoskeleton</option>
+              </select>
+              <div style="font-size:13px;color:var(--muted);margin-bottom:6px">Capabilities (name,type,range,unit — 每行一条)</div>
+              <textarea id="hw-custom-caps" rows="5"
+                placeholder='temperature,read,[-40,85],°C&#10;set_temp,write,[-40,85],°C&#10;defrost,exec'
+                style="width:100%;background:var(--card2);color:var(--text);border:1px solid var(--border);padding:6px 10px;border-radius:6px;font-size:12px;font-family:monospace"></textarea>
+              <button class="btn" onclick="registerHwCustom()" style="margin-top:10px">➕ 注册</button>
+            </div>
+            <div>
+              <div style="font-size:13px;color:var(--muted);margin-bottom:6px">已注册自定义 Skills</div>
+              <div id="hw-custom-list" style="font-size:12px;color:var(--muted)">加载中...</div>
+            </div>
+          </div>
+        </div>
       </div>
     </section>
 
@@ -353,6 +429,64 @@ tbody tr:last-child td { border-bottom: none; }
 
     <div class="footer">AutoBiz v1.0 · <code>python -m autobiz.run dashboard --port 8787</code> · IMAP Daemon 已注册 (每日 09/15/21)</div>
   </main>
+
+<!-- ======= 第八屏：tick-stock-panel · 真实行情 + K线 + 指标 ======= -->
+<section id="tick-panel" class="sec">
+  <h2 class="sec-title">tick-stock-panel · Real-Time Market Data</h2>
+
+  <!-- 行情带 -->
+  <div id="market-ticker" style="display:flex;gap:14px;overflow-x:auto;padding:10px 0;border-bottom:1px solid var(--line);margin-bottom:12px;min-height:48px">
+    <div style="color:var(--sub);font-size:12px;padding-top:18px">Loading symbols…</div>
+  </div>
+
+  <div class="grid3">
+    <div class="card" style="grid-column:span 2">
+      <h3>
+        <select id="ms-sym" onchange="refreshMarket()" style="background:var(--panel2);color:var(--txt);border:1px solid var(--line);border-radius:6px;padding:2px 8px;font-size:12px">
+          <option>BTCUSDT</option><option>ETHUSDT</option>
+          <option>AAPL</option><option>NVDA</option><option>TSLA</option>
+          <option>600519.SS</option><option>300750.SZ</option>
+        </select>
+        <select id="ms-int" onchange="refreshMarket()" style="background:var(--panel2);color:var(--txt);border:1px solid var(--line);border-radius:6px;padding:2px 8px;font-size:12px;margin-left:6px">
+          <option value="1m">1m</option><option value="5m">5m</option>
+          <option value="15m">15m</option><option value="1h">1h</option><option value="1d">1d</option>
+        </select>
+        <span id="ms-provider" style="font-size:11px;color:var(--sub);margin-left:8px">--</span>
+      </h3>
+      <div id="chart-kline" style="height:380px"></div>
+    </div>
+    <div class="card">
+      <h3>Live Ticker <span class="pill ok" id="mkt-live">● LIVE</span></h3>
+      <div id="mkt-stats" style="font-family:ui-monospace,monospace;font-size:13px;line-height:1.9;padding:6px 0">
+        <div>symbol: <span style="color:var(--acc2)">--</span></div>
+        <div>price: <span style="color:var(--gold)">--</span></div>
+        <div>change: <span style="color:var(--sub)">--</span></div>
+        <div>high/low: <span style="color:var(--acc2)">-- / --</span></div>
+        <div>vol: <span style="color:var(--purple)">--</span></div>
+        <div>source: <span style="color:var(--acc)">--</span></div>
+      </div>
+      <div style="border-top:1px dashed var(--line);margin:10px 0"></div>
+      <div style="font-size:11px;color:var(--sub);line-height:1.6">
+        <b>Technical Indicators</b>
+        <div>MA5 <span id="ind-ma5">--</span> &nbsp; MA20 <span id="ind-ma20">--</span> &nbsp; MA60 <span id="ind-ma60">--</span></div>
+        <div>MACD <span id="ind-macd">--</span> &nbsp; Signal <span id="ind-sig">--</span> &nbsp; Hist <span id="ind-hist">--</span></div>
+        <div>RSI14 <span id="ind-rsi">--</span> &nbsp; ATR14 <span id="ind-atr">--</span></div>
+        <div>BB <span id="ind-bb">-- / -- / --</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="grid2" style="margin-top:12px">
+    <div class="card"><h3>MACD (12,26,9)</h3><div id="chart-macd" style="height:180px"></div></div>
+    <div class="card"><h3>RSI (14)</h3><div id="chart-rsi" style="height:180px"></div></div>
+  </div>
+
+  <div style="font-size:11px;color:var(--sub);margin-top:8px">
+    ⚠️ Fallback: network-unavailable → synthetic GBM (deterministic per symbol hash).
+    Set <code>AUTOZONE_MARKET_PROVIDER=binance|yahoo</code> 强制真实源.
+  </div>
+</section>
+
 </div>
 
 <script>
@@ -599,6 +733,213 @@ async function loadHardware() {
     <div class="raw-block"><span class="k">Sandbox</span> 拦截危险写操作 (<span class="k">erase_flash</span>, <span class="k">write_protected</span>, <span class="k">firmware_update</span>)
   只有 <span class="s">perm="admin"</span> 能绕过. 普通权限永远被挡.
   指数退避: <span class="n">attempts=3</span> → <span class="n">3375ms</span> 间隔</div>`;
+
+  // HAK v2.0 Skills Runtime — 首次进入 hardware section 才加载
+  if (!window._hwSkillsLoaded) {
+    window._hwSkillsLoaded = true;
+    loadHwSkills();
+    loadHwCustomList();
+  }
+}
+
+// ===== HAK v2.0 Skills =====
+async function loadHwSkills() {
+  const data = await fetchJSON("/api/hardware/skills") || {};
+  const total = data.total || 120;
+  document.getElementById("hw-skills-count").textContent = total + " skills";
+
+  // Class 分布
+  const classes = data.by_class || {};
+  const maxClass = Math.max(...Object.values(classes), 1);
+  const clsHtml = Object.entries(classes).sort((a,b)=>b[1]-a[1]).map(([k,v]) => {
+    const pct = Math.round(v / maxClass * 100);
+    return `<div style="background:var(--card2);padding:6px 10px;border-radius:4px">
+      <div style="display:flex;justify-content:space-between;font-size:11px">
+        <span style="color:var(--muted)">${k}</span><span style="font-weight:600">${v}</span>
+      </div>
+      <div style="height:4px;background:var(--border);border-radius:2px;margin-top:4px">
+        <div style="height:100%;width:${pct}%;background:var(--blue);border-radius:2px"></div>
+      </div></div>`;
+  }).join("");
+  document.getElementById("hw-skills-classes").innerHTML = clsHtml;
+
+  // Skill 卡片网格 — 按 class 分组, 每组最多显示 8 个 + "全部展开"按钮
+  renderSkillGrid(data);
+}
+
+// Skill 卡片网格 — 按 class 分组 (数据已在 loadHwSkills 的 data 里, 不再二次 fetch)
+function renderSkillGrid(data, searchResults) {
+  const grid = document.getElementById("hw-skills-grid");
+  if (searchResults) {
+    // 搜索结果
+    if (searchResults.length === 0) {
+      grid.innerHTML = `<div style="color:var(--muted);font-size:12px;padding:20px;text-align:center">未找到匹配 skill</div>`;
+      return;
+    }
+    grid.innerHTML = searchResults.map(m => `
+      <div onclick="showHwSkillDetail('${safe(m.skill)}')" class="hw-skill-card"
+        style="background:var(--card2);padding:8px 12px;border-radius:6px;cursor:pointer;margin-bottom:6px;border-left:3px solid var(--blue);display:flex;justify-content:space-between;align-items:center">
+        <div>
+          <div style="font-size:12px;font-weight:600">${safe(m.skill)}</div>
+          <div style="font-size:10px;color:var(--muted)">${safe(m.device_class || "")} · ${(m.capabilities||[]).slice(0,3).join(", ")}</div>
+        </div>
+        <div style="font-size:11px;color:var(--blue);font-weight:600">score=${m.score}</div>
+      </div>`).join("");
+    return;
+  }
+  // 按 class 分组显示 (直接用 data.by_class_names — 已经在 /api/hardware/skills 返回)
+  const bcn = (data && data.by_class_names) || {};
+  const html = Object.entries(bcn).sort((a,b)=>b[1].length-a[1].length).map(([cls, names]) => {
+    const show = names.slice(0, 8);
+    const extra = Math.max(0, names.length - 8);
+    return `<div style="margin-bottom:14px">
+      <div style="font-size:12px;color:var(--muted);margin-bottom:6px;font-weight:600">${cls} <span style="font-weight:400">(${names.length})</span></div>
+      <div style="display:flex;flex-wrap:wrap;gap:4px">
+        ${show.map(n => `<span onclick="showHwSkillDetail('${safe(n)}')"
+          style="background:var(--card2);padding:4px 8px;border-radius:4px;font-size:11px;cursor:pointer;border:1px solid var(--border)">${safe(n)}</span>`).join("")}
+        ${extra > 0 ? `<span style="font-size:11px;color:var(--muted);padding:4px 8px">+${extra} 更多</span>` : ""}
+      </div></div>`;
+  }).join("");
+  grid.innerHTML = html || `<div style="color:var(--muted);font-size:12px;padding:20px;text-align:center">加载失败</div>`;
+}
+
+async function searchHwSkill() {
+  const kw = (document.getElementById("hw-skill-search").value || "").trim();
+  if (!kw) { loadHwSkills(); return; }
+  if (window._hwSearchTimer) clearTimeout(window._hwSearchTimer);
+  window._hwSearchTimer = setTimeout(async () => {
+    const data = await fetchJSON(`/api/hardware/skills/search/${encodeURIComponent(kw)}`) || {};
+    renderSkillGrid(null, data.results || []);
+  }, 300);
+}
+
+async function showHwSkillDetail(name) {
+  const data = await fetchJSON(`/api/hardware/skills/${encodeURIComponent(name)}`) || {};
+  document.getElementById("hw-modal-title").innerHTML =
+    `${safe(name)} <span style="font-size:13px;color:var(--muted);font-weight:400">${safe(data.device_class || "")}</span>`;
+  // Capabilities 表格
+  const caps = (data.capabilities || []).map(c => {
+    const range = c.range ? `[${c.range[0]}, ${c.range[1]}]${c.unit? " "+c.unit:""}` : "";
+    return `<tr><td style="padding:4px 8px;border-bottom:1px solid var(--border)">
+      <span style="font-weight:600">${safe(c.name)}</span></td>
+      <td style="padding:4px 8px;border-bottom:1px solid var(--border)">
+        ${tag(c.type, c.type==="read"?"blue":c.type==="write"?"amber":c.type==="exec"?"purple":"gray")}</td>
+      <td style="padding:4px 8px;border-bottom:1px solid var(--border);color:var(--muted);font-size:11px">${range}</td></tr>`;
+  }).join("");
+  // Live reads
+  const reads = data.live_reads || {};
+  const readHtml = Object.keys(reads).length > 0
+    ? Object.entries(reads).map(([k,v]) => `<div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px dashed var(--border)">
+        <span style="color:var(--muted)">${safe(k)}</span>
+        <span style="font-weight:600;color:var(--blue)">${v}</span></div>`).join("")
+    : `<div style="color:var(--muted);font-size:12px">无 read 能力 (纯 write/exec/notify 设备)</div>`;
+
+  document.getElementById("hw-modal-body").innerHTML = `
+    <div style="margin-bottom:16px">
+      <div style="font-size:12px;color:var(--muted);margin-bottom:6px">实时数据</div>
+      <div style="background:var(--card2);padding:12px;border-radius:6px">${readHtml}</div>
+    </div>
+    <div style="font-size:12px;color:var(--muted);margin-bottom:6px">Capabilities</div>
+    <table style="width:100%;border-collapse:collapse;font-size:12px">
+      <thead><tr style="color:var(--muted);font-size:11px">
+        <th style="text-align:left;padding:4px 8px">Name</th>
+        <th style="text-align:left;padding:4px 8px">Type</th>
+        <th style="text-align:left;padding:4px 8px">Range</th>
+      </tr></thead><tbody>${caps}</tbody></table>
+    ${data.vendor_id ? `<div style="margin-top:12px;font-size:11px;color:var(--muted)">Vendor: ${safe(data.vendor_id)} · Protocol: ${safe(data.protocol_version||"")} · SN: ${safe(data.serial_number||"")}</div>` : ""}`;
+  document.getElementById("hw-skill-modal").style.display = "flex";
+}
+
+async function runHwCompose() {
+  const task = (document.getElementById("hw-compose-task").value || "").trim();
+  if (!task) return;
+  const data = await fetchJSON(`/api/hardware/orchestrate?task=${encodeURIComponent(task)}`) || {};
+  const pipeline = data.pipeline || {};
+  const html = `
+    <div style="margin-bottom:8px">
+      <span style="font-size:11px;color:var(--muted)">plan_type: </span>
+      <span style="font-size:11px;font-weight:600;color:var(--blue)">${safe(data.plan_type || "")}</span>
+      <span style="font-size:11px;color:var(--muted);margin-left:8px">· skills: </span>
+      <span style="font-size:11px;font-weight:600">${(data.skills||[]).map(s=>safe(s)).join(", ")}</span>
+    </div>
+    <div style="font-size:11px;color:var(--muted);margin-bottom:6px">Pipeline steps: ${pipeline.steps_done || 0}</div>
+    <div style="background:var(--card2);padding:10px;border-radius:6px;max-height:160px;overflow-y:auto">
+      ${Object.entries(pipeline.results || {}).map(([k,v]) => {
+        const val = typeof v === "object" ? JSON.stringify(v) : v;
+        return `<div style="padding:3px 0;border-bottom:1px dashed var(--border);font-size:11px">
+          <span style="color:var(--muted)">${safe(k)}:</span> <span style="font-weight:600">${safe(String(val).slice(0,60))}</span></div>`;
+      }).join("")}
+    </div>
+    ${data.triggers && data.triggers.length > 0 ? `
+    <div style="font-size:11px;color:var(--muted);margin-top:8px;margin-bottom:4px">Triggers (${data.triggers.length})</div>
+    <div style="background:var(--card2);padding:8px;border-radius:6px;font-size:11px">
+      ${data.triggers.slice(0,3).map(t => `<div style="margin-bottom:4px">⚡ <span style="color:var(--muted)">${safe(t.watch_cap||"")}</span> → <span style="color:var(--blue)">${safe(t.action_cap||"")}</span> ${tag(t.level||"warn", t.level==="crit"?"red":"amber")}</div>`).join("")}
+    </div>` : ""}
+  `;
+  document.getElementById("hw-compose-result").innerHTML = html;
+}
+
+async function registerHwCustom() {
+  const name = (document.getElementById("hw-custom-name").value || "").trim();
+  const cls = document.getElementById("hw-custom-class").value;
+  const capsRaw = (document.getElementById("hw-custom-caps").value || "").trim();
+  if (!name || !capsRaw) { alert("请填写 Skill Name 和 Capabilities"); return; }
+  const caps = capsRaw.split("\n").map(line => {
+    const [n, type, rng, unit] = line.split(",").map(s => s.trim());
+    const cap = { name: n, type: type };
+    if (rng) {
+      const m = rng.match(/\[(-?[\d.]+),\s*(-?[\d.]+)\]/);
+      if (m) cap.range = [parseFloat(m[1]), parseFloat(m[2])];
+    }
+    if (unit) cap.unit = unit;
+    return cap;
+  });
+  try {
+    const body = { name, device_class: cls, capabilities: caps };
+    const resp = await fetch("/api/hardware/skills", {
+      method: "POST",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify(body)
+    });
+    const data = await resp.json();
+    if (resp.ok) {
+      alert(`✅ Skill '${name}' 注册成功!`);
+      document.getElementById("hw-custom-name").value = "";
+      document.getElementById("hw-custom-caps").value = "";
+      loadHwCustomList();
+      loadHwSkills();
+    } else {
+      alert(`❌ 注册失败: ${data.error || resp.status}`);
+    }
+  } catch(e) { alert("❌ 网络错误: " + e.message); }
+}
+
+async function loadHwCustomList() {
+  const data = await fetchJSON("/api/hardware/skills") || {};
+  const customs = data.custom_skills || [];
+  const el = document.getElementById("hw-custom-list");
+  if (customs.length === 0) {
+    el.innerHTML = `<div style="color:var(--muted);font-size:11px;padding:20px;text-align:center">暂无自定义 skill</div>`;
+    return;
+  }
+  el.innerHTML = customs.map(s => `
+    <div style="background:var(--card2);padding:8px 12px;border-radius:6px;margin-bottom:6px;display:flex;justify-content:space-between;align-items:center">
+      <div>
+        <div style="font-size:12px;font-weight:600">${safe(s.name)}</div>
+        <div style="font-size:10px;color:var(--muted)">${safe(s.device_class)} · ${(s.capabilities||[]).map(c=>c.name).join(", ")}</div>
+      </div>
+      <button onclick="unregisterHw('${safe(s.name)}')" class="btn btn-ghost" style="font-size:10px;padding:4px 8px">🗑️ 删除</button>
+    </div>`).join("");
+}
+
+async function unregisterHw(name) {
+  if (!confirm(`确定要注销 skill '${name}' 吗?`)) return;
+  try {
+    const resp = await fetch(`/api/hardware/skills/${encodeURIComponent(name)}`, { method: "DELETE" });
+    const data = await resp.json();
+    if (resp.ok) { loadHwCustomList(); loadHwSkills(); }
+    else { alert(`❌ 注销失败: ${data.error || resp.status}`); }
+  } catch(e) { alert("❌ 网络错误"); }
 }
 
 // ===== 9. API Hub =====
@@ -716,6 +1057,214 @@ async function loadConfig() {
 <span class="s">Daemon</span>   schtasks: 每天 09/15/21 + 登录触发
 <span class="s">Logs</span>     autobiz/logs/daemon.log
   </div>`;
+}
+
+// ============ 📈 tick-stock-panel — 真实行情 + K线 + MACD + RSI ============
+let _klineChart, _macdChart, _rsiChart;
+let _mktSymbol = "BTCUSDT", _mktInt = "1m";
+let _mktTickerData = {};  // symbol -> {price, change_pct}
+let _mktSSE;
+
+async function loadMarketTicker(){
+  const data = await fetchJSON("/api/market/list");
+  if(!data?.symbols){ document.getElementById("market-ticker").innerHTML = "<span style='color:var(--bad)'>Market data unavailable</span>"; return; }
+  let html = "";
+  for(const s of data.symbols){
+    const q = s.quote || {};
+    const sym = s.symbol;
+    const price = q.price ?? "--";
+    const ch = q.change_24h_pct ?? 0;
+    const chStr = (ch>=0? "▲":"▼") + Math.abs(ch).toFixed(2) + "%";
+    const chColor = ch>=0? "var(--green)":"var(--red)";
+    _mktTickerData[sym] = { price, change: ch };
+    html += `<div style="min-width:140px;padding:6px 12px;background:var(--card2);border-radius:8px;cursor:pointer;border:1px solid transparent"
+              onclick="document.getElementById('ms-sym').value='${sym}';refreshMarket()"
+              onmouseover="this.style.borderColor='var(--line)'" onmouseout="this.style.borderColor='transparent'">
+      <div style="font-size:12px;color:var(--sub)">${sym} · ${s.name}</div>
+      <div style="font-size:16px;font-weight:700;color:var(--gold);font-family:ui-monospace,monospace">${typeof price==='number' ? price.toFixed(price>1000?2:4) : price}</div>
+      <div style="font-size:11px;color:${chColor}">${chStr}</div>
+    </div>`;
+  }
+  document.getElementById("market-ticker").innerHTML = html;
+  // provider badge
+  const anyMeta = data.symbols[0]?.meta || {};
+  document.getElementById("ms-provider").textContent =
+    `[${data.provider}] source=${anyMeta.source}${anyMeta.is_fallback? " ⚠️ fallback(network-unavailable)":" ✅ live"}`;
+}
+
+async function refreshMarket(){
+  _mktSymbol = document.getElementById("ms-sym").value;
+  _mktInt    = document.getElementById("ms-int").value;
+  const data = await fetchJSON(`/api/market/indicators?symbol=${_mktSymbol}&interval=${_mktInt}&limit=120`);
+  if(!data?.ok) return;
+  const ind = data.indicators || {};
+  const candles = data.candles || [];
+  const qd = await fetchJSON(`/api/market/ticker?symbol=${_mktSymbol}`);
+  const q = qd?.quote || {};
+  const meta = qd?.meta || {};
+
+  // ---- Live stats ----
+  document.querySelector("#mkt-stats span").textContent = _mktSymbol;
+  document.querySelectorAll("#mkt-stats span")[1].textContent =
+    typeof q.price === "number" ? "$"+q.price.toFixed(q.price>1000?2:4) : "--";
+  const ch = q.change_24h_pct ?? 0;
+  document.querySelectorAll("#mkt-stats span")[2].textContent =
+    (ch>=0?"▲":"▼") + Math.abs(ch).toFixed(2) + "%";
+  document.querySelectorAll("#mkt-stats span")[2].style.color =
+    ch>=0 ? "var(--green)" : "var(--red)";
+  document.querySelectorAll("#mkt-stats span")[3].textContent =
+    "$"+(q.high_24h?.toFixed(2)||"--") + " / $" + (q.low_24h?.toFixed(2)||"--");
+  const vol = q.volume_24h ?? 0;
+  document.querySelectorAll("#mkt-stats span")[4].textContent =
+    vol > 1e6 ? (vol/1e6).toFixed(2)+"M" : (vol/1e3).toFixed(1)+"K";
+  document.querySelectorAll("#mkt-stats span")[5].textContent =
+    meta.source + (meta.is_fallback ? " ⚠️ fallback" : " ✅ live");
+  document.querySelectorAll("#mkt-stats span")[5].style.color =
+    meta.is_fallback ? "var(--warn)" : "var(--green)";
+
+  // ---- Indicators box ----
+  const lastI = ind.close ? ind.close.length-1 : -1;
+  const fmtV = v => v==null ? "--" : Number(v).toFixed(2);
+  document.getElementById("ind-ma5").textContent  = fmtV(ind.ma5?.[lastI]);
+  document.getElementById("ind-ma20").textContent = fmtV(ind.ma20?.[lastI]);
+  document.getElementById("ind-ma60").textContent = fmtV(ind.ma60?.[lastI]);
+  document.getElementById("ind-macd").textContent = ind.macd?.[lastI]==null?"--":Number(ind.macd[lastI]).toFixed(4);
+  document.getElementById("ind-sig").textContent = ind.macd_signal?.[lastI]==null?"--":Number(ind.macd_signal[lastI]).toFixed(4);
+  document.getElementById("ind-hist").textContent = ind.macd_hist?.[lastI]==null?"--":Number(ind.macd_hist[lastI]).toFixed(4);
+  document.getElementById("ind-rsi").textContent  = fmtV(ind.rsi14?.[lastI]);
+  document.getElementById("ind-atr").textContent = fmtV(ind.atr14?.[lastI]);
+  document.getElementById("ind-bb").textContent  =
+    [ind.bb_upper?.[lastI], ind.bb_mid?.[lastI], ind.bb_lower?.[lastI]].map(v=>v==null?"--":Number(v).toFixed(2)).join(" / ");
+
+  // ---- K-line chart (ECharts candlestick) ----
+  const times = candles.map(c => new Date(c[0]*1000).toLocaleTimeString());
+  const klineData = candles.map(c => [c[1], c[2], c[3], c[4]]);  // [open, high, low, close]
+  const volumes = candles.map((c,i) => [i, c[5], c[4]>=c[1]?1:-1]);
+
+  if(!_klineChart) _klineChart = echarts.init(document.getElementById("chart-kline"));
+  _klineChart.setOption({
+    backgroundColor: "transparent",
+    tooltip:{ trigger:"axis", axisPointer:{ type:"cross" },
+              backgroundColor:"#0d1520", borderColor:"#1e2d40", textStyle:{color:"#e6edf5"} },
+    legend:{ data:["K线","MA5","MA20","MA60","BOLL Upper","BOLL Lower"], textStyle:{color:"#7a8ba0"}, top:4 },
+    axisPointer:{ link:[{xAxisIndex:"all"}], label:{ backgroundColor:"#1e2d40" } },
+    grid:[ { left:60, right:30, top:50, height:220 }, { left:60, right:30, top:280, height:70 } ],
+    xAxis:[
+      { type:"category", data: times, boundaryGap:true, axisLine:{lineStyle:{color:"#1e2d40"}}, axisLabel:{color:"#7a8ba0", fontSize:10}, splitLine:{show:false}, min:"dataMin", max:"dataMax", axisPointer:{z:100} },
+      { type:"category", gridIndex:1, data: times, boundaryGap:true, axisLine:{lineStyle:{color:"#1e2d40"}}, axisLabel:{show:false}, splitLine:{show:false} }
+    ],
+    yAxis:[
+      { scale:true, axisLine:{lineStyle:{color:"#1e2d40"}}, axisLabel:{color:"#7a8ba0", fontSize:10}, splitLine:{lineStyle:{color:"#141e2d", type:"dashed"}} },
+      { scale:true, gridIndex:1, splitNumber:2, axisLabel:{show:false}, axisLine:{show:false}, axisTick:{show:false}, splitLine:{show:false} }
+    ],
+    dataZoom:[ { type:"inside", xAxisIndex:[0,1], start:70, end:100 } ],
+    series:[
+      { name:"K线", type:"candlestick", data: klineData,
+        itemStyle:{ color:"#2ee59d", color0:"#ff6b6b", borderColor:"#2ee59d", borderColor0:"#ff6b6b" } },
+      { name:"MA5",  type:"line", smooth:true, showSymbol:false, data: ind.ma5,
+        lineStyle:{width:1, color:"#ffd166"} },
+      { name:"MA20", type:"line", smooth:true, showSymbol:false, data: ind.ma20,
+        lineStyle:{width:1, color:"#4da3ff"} },
+      { name:"MA60", type:"line", smooth:true, showSymbol:false, data: ind.ma60,
+        lineStyle:{width:1.2, color:"#c792ea"} },
+      { name:"BOLL Upper", type:"line", showSymbol:false, data: ind.bb_upper,
+        lineStyle:{width:0.8, color:"rgba(255,255,255,0.2)", type:"dashed"} },
+      { name:"BOLL Lower", type:"line", showSymbol:false, data: ind.bb_lower,
+        lineStyle:{width:0.8, color:"rgba(255,255,255,0.2)", type:"dashed"} },
+      { name:"Volume", type:"bar", xAxisIndex:1, yAxisIndex:1, data: volumes,
+        itemStyle:{ color: p => p.data[2] >= 0 ? "#2ee59d" : "#ff6b6b" } }
+    ]
+  }, true);
+
+  // ---- MACD subplot ----
+  if(!_macdChart) _macdChart = echarts.init(document.getElementById("chart-macd"));
+  _macdChart.setOption({
+    backgroundColor:"transparent",
+    tooltip:{ trigger:"axis", backgroundColor:"#0d1520", borderColor:"#1e2d40", textStyle:{color:"#e6edf5"} },
+    grid:{ left:60, right:20, top:10, bottom:20 },
+    xAxis:{ type:"category", data: times, axisLine:{lineStyle:{color:"#1e2d40"}}, axisLabel:{show:false}, splitLine:{show:false} },
+    yAxis:{ scale:true, axisLine:{lineStyle:{color:"#1e2d40"}}, axisLabel:{color:"#7a8ba0", fontSize:10}, splitLine:{lineStyle:{color:"#141e2d", type:"dashed"}} },
+    series:[
+      { name:"MACD", type:"line", showSymbol:false, data: ind.macd, lineStyle:{width:1.2, color:"#4da3ff"} },
+      { name:"Signal", type:"line", showSymbol:false, data: ind.macd_signal, lineStyle:{width:1, color:"#ffd166"} },
+      { name:"Histogram", type:"bar", data: ind.macd_hist?.map(v => ({ value:v, itemStyle:{ color: v>=0?"#2ee59d":"#ff6b6b" } })),
+        lineStyle:{color:"transparent"}, barWidth:4 },
+    ]
+  }, true);
+
+  // ---- RSI subplot ----
+  if(!_rsiChart) _rsiChart = echarts.init(document.getElementById("chart-rsi"));
+  _rsiChart.setOption({
+    backgroundColor:"transparent",
+    tooltip:{ trigger:"axis", backgroundColor:"#0d1520", borderColor:"#1e2d40", textStyle:{color:"#e6edf5"} },
+    grid:{ left:60, right:20, top:10, bottom:20 },
+    xAxis:{ type:"category", data: times, axisLine:{lineStyle:{color:"#1e2d40"}}, axisLabel:{show:false}, splitLine:{show:false} },
+    yAxis:{ scale:false, min:0, max:100, axisLine:{lineStyle:{color:"#1e2d40"}},
+            axisLabel:{color:"#7a8ba0", fontSize:10, formatter: v=>v===30||v===70?v:""},
+            splitLine:{lineStyle:{color:"#141e2d", type:"dashed"}} },
+    series:[
+      { name:"RSI(14)", type:"line", showSymbol:false, data: ind.rsi14,
+        lineStyle:{width:1.5, color:"#c792ea"}, areaStyle:{color:{
+          type:"linear", x:0, y:0, x2:0, y2:1,
+          colorStops:[ {offset:0, color:"rgba(199,146,234,0.25)"}, {offset:1, color:"rgba(199,146,234,0.05)"} ]
+        }} },
+      { name:"ATR(14)", type:"line", showSymbol:false, data: ind.atr14,
+        lineStyle:{width:1, color:"#ffd166", type:"dashed"} }
+    ],
+    markLine:{ silent:true, symbol:"none", data:[ {yAxis:30, lineStyle:{color:"#2ee59d", type:"dashed"}},
+                                                  {yAxis:70, lineStyle:{color:"#ff6b6b", type:"dashed"}} ],
+               label:{ show:true, formatter: p => p.value, color:"#7a8ba0", fontSize:10 } }
+  }, true);
+}
+
+// ---- SSE 实时 tick 推送 (每秒) ----
+function initMarketSSE(){
+  try {
+    _mktSSE = new EventSource("/api/sse/market");
+    _mktSSE.onmessage = (ev) => {
+      try{
+        const d = JSON.parse(ev.data);
+        const sym = d.symbol;
+        const t = d.tick || {};
+        _mktTickerData[sym] = { price: t.price, change: t.change_pct };
+        // 更新 ticker 栏里对应卡片
+        const allCards = document.querySelectorAll("#market-ticker > div[onclick]");
+        allCards.forEach(card => {
+          if(card.getAttribute("onclick").includes(sym)){
+            const prices = card.querySelectorAll("div");
+            if(prices[1]) prices[1].textContent = (t.price>1000? t.price.toFixed(2): t.price.toFixed(4));
+            if(prices[2]){
+              prices[2].textContent = (t.change_pct>=0?"▲":"▼") + Math.abs(t.change_pct).toFixed(2)+"%";
+              prices[2].style.color = t.change_pct>=0 ? "var(--green)" : "var(--red)";
+            }
+          }
+        });
+        // 如果当前页面就是这个 symbol, 更新 stats price
+        if(sym === _mktSymbol){
+          const spans = document.querySelectorAll("#mkt-stats span");
+          if(spans[1]) spans[1].textContent = "$"+(t.price>1000?t.price.toFixed(2):t.price.toFixed(4));
+          if(spans[2]){
+            spans[2].textContent = (t.change_pct>=0?"▲":"▼") + Math.abs(t.change_pct).toFixed(2)+"%";
+            spans[2].style.color = t.change_pct>=0 ? "var(--green)" : "var(--red)";
+          }
+        }
+      }catch(e){}
+    };
+    _mktSSE.onerror = () => { _mktSSE && _mktSSE.close(); };
+  } catch(e){}
+}
+
+// 市场面板延迟加载 (nav 触发)
+let _marketInit = false;
+function ensureMarketInit(){
+  if(_marketInit) return; _marketInit = true;
+  loadMarketTicker();
+  refreshMarket();
+  initMarketSSE();
+  setInterval(refreshMarket, 30000);  // 30s 全量刷新
+  window.addEventListener("resize", ()=>{
+    [_klineChart,_macdChart,_rsiChart].forEach(c=>c&&c.resize());
+  });
 }
 
 // ============ 🤖 AI 销售漏斗 ============
