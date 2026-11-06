@@ -1344,6 +1344,111 @@ class Handler(BaseHTTPRequestHandler):
                         "blocked": blocked, "reason": detail})
             return
 
+        # ========== HARDWARE SKILL ENGINE (120 skills) ==========
+        if path == "/api/hardware/skills":
+            """全部 120 HAK skills 总览."""
+            try:
+                from .hardware.skill_runtime import engine as _eng
+                eng = _eng()
+                by_class = {cls: sorted(names) for cls, names in eng.list_by_class().items()}
+                # 每个 class 采样一个做 live-read 验证
+                samples = {}
+                for cls, names in by_class.items():
+                    try:
+                        rt = eng.get(names[0])
+                        cap = next((c for c in rt.capabilities if c.get("type") in ("read","rw")), None)
+                        if cap:
+                            val = rt.read(cap["name"])
+                            samples[cls] = {
+                                "skill": names[0],
+                                "capability": cap["name"],
+                                "value": val,
+                                "unit": cap.get("unit", ""),
+                            }
+                    except Exception: pass
+                self._json({
+                    "ok": True, "total": eng.count(),
+                    "classes": sorted(by_class.keys()),
+                    "by_class": {cls: {"count": len(n), "sample_skills": n[:5]}
+                                 for cls, n in by_class.items()},
+                    "live_reads": samples,
+                })
+            except Exception as e:
+                self._json({"ok": False, "error": str(e)}, 500)
+            return
+
+        m = re.match(r"^/api/hardware/skills/([a-z_]+)$", path)
+        if m:
+            """单个 skill 详情 + live reads + simulate."""
+            try:
+                from .hardware.skill_runtime import engine as _eng
+                eng = _eng()
+                sn = m.group(1)
+                if sn not in eng.skill_names:
+                    self._json({"ok": False, "error": f"unknown skill: {sn}"}, 404)
+                    return
+                rt = eng.get(sn)
+                # 全部 read-capabilities live read
+                live = {}
+                for cap in rt.capabilities:
+                    if cap.get("type") in ("read", "rw"):
+                        try:
+                            live[cap["name"]] = rt.read(cap["name"])
+                        except Exception as e:
+                            live[cap["name"]] = f"ERR: {e}"
+                self._json({
+                    "ok": True, "skill": sn,
+                    "device_class": rt.device_class,
+                    "serial_number": rt.descriptor["serial_number"],
+                    "capabilities": rt.capabilities,
+                    "live_reads": live,
+                    "descriptor": rt.descriptor,
+                })
+            except Exception as e:
+                self._json({"ok": False, "error": str(e)}, 500)
+            return
+
+        m = re.match(r"^/api/hardware/skills/search/([a-zA-Z0-9_]+)$", path)
+        if m:
+            """按 capability 关键词搜 skills."""
+            try:
+                from .hardware.skill_runtime import engine as _eng
+                eng = _eng()
+                kw = m.group(1)
+                results = eng.find_by_capability(kw)
+                self._json({"ok": True, "keyword": kw, "results": results[:20]})
+            except Exception as e:
+                self._json({"ok": False, "error": str(e)}, 500)
+            return
+
+        m = re.match(r"^/api/hardware/skills/compose$", path)
+        if m or path == "/api/hardware/skills/compose":
+            """skill 组合: ?task=patient monitoring"""
+            try:
+                from .hardware.skill_runtime import engine as _eng
+                eng = _eng()
+                qs = parse_qs(u.query)
+                task = (qs.get("task") or [""])[0]
+                if not task:
+                    self._json({"ok": False, "error": "task= required"})
+                    return
+                result = eng.compose(task)
+                self._json(result)
+            except Exception as e:
+                self._json({"ok": False, "error": str(e)}, 500)
+            return
+
+        if path == "/api/hardware/skills/demo":
+            """120 skills 快速演示 (28 个样本的 live reads)."""
+            try:
+                from .hardware.skill_runtime import engine as _eng
+                eng = _eng()
+                result = eng.demo(seconds=0.1)
+                self._json(result)
+            except Exception as e:
+                self._json({"ok": False, "error": str(e)}, 500)
+            return
+
         # ---- 售后工单 GET ----
         m = re.match(r"^/api/tickets/(\d+)$", path)
         if m:
