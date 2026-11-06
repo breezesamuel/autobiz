@@ -1,0 +1,4301 @@
+{
+  "temperature_sensor": {
+    "protocol_version": "hdp-1",
+    "vendor_id": "hak-v2",
+    "product_id": "tmp117",
+    "device_class": "sensor",
+    "serial_number": "SN-TEMPERATURE_SENSOR-0001",
+    "capabilities": [
+      {
+        "name": "temperature",
+        "type": "read",
+        "unit": "°C",
+        "range": [
+          -40,
+          125
+        ]
+      }
+    ],
+    "defaults": {
+      "poll_interval_ms": 1000
+    }
+  },
+  "humidity_sensor": {
+    "protocol_version": "hdp-1",
+    "vendor_id": "hak-v2",
+    "product_id": "sht40",
+    "device_class": "sensor",
+    "serial_number": "SN-HUMIDITY_SENSOR-0001",
+    "capabilities": [
+      {
+        "name": "humidity",
+        "type": "read",
+        "unit": "%",
+        "range": [
+          0,
+          100
+        ]
+      }
+    ],
+    "defaults": {
+      "poll_interval_ms": 1000
+    }
+  },
+  "imu_6axis": {
+    "protocol_version": "hdp-1",
+    "vendor_id": "hak-v2",
+    "product_id": "bno055",
+    "device_class": "sensor",
+    "serial_number": "SN-IMU_6AXIS-0001",
+    "capabilities": [
+      {
+        "name": "acceleration",
+        "type": "read",
+        "unit": "m/s²",
+        "range": [
+          -16,
+          16
+        ]
+      },
+      {
+        "name": "gyro",
+        "type": "read",
+        "unit": "°/s",
+        "range": [
+          -2000,
+          2000
+        ]
+      },
+      {
+        "name": "orientation",
+        "type": "read",
+        "unit": "°",
+        "range": [
+          -180,
+          180
+        ]
+      }
+    ],
+    "defaults": {
+      "poll_interval_ms": 1000
+    }
+  },
+  "imu_9axis": {
+    "protocol_version": "hdp-1",
+    "vendor_id": "hak-v2",
+    "product_id": "icm20948",
+    "device_class": "sensor",
+    "serial_number": "SN-IMU_9AXIS-0001",
+    "capabilities": [
+      {
+        "name": "acceleration",
+        "type": "read",
+        "unit": "m/s²",
+        "range": [
+          -16,
+          16
+        ]
+      },
+      {
+        "name": "gyro",
+        "type": "read",
+        "unit": "°/s",
+        "range": [
+          -2000,
+          2000
+        ]
+      },
+      {
+        "name": "magnetometer",
+        "type": "read",
+        "unit": "μT",
+        "range": [
+          -4900,
+          4900
+        ]
+      }
+    ],
+    "defaults": {
+      "poll_interval_ms": 1000
+    }
+  },
+  "pressure_sensor": {
+    "protocol_version": "hdp-1",
+    "vendor_id": "hak-v2",
+    "product_id": "bmp390",
+    "device_class": "sensor",
+    "serial_number": "SN-PRESSURE_SENSOR-0001",
+    "capabilities": [
+      {
+        "name": "pressure",
+        "type": "read",
+        "unit": "hPa",
+        "range": [
+          300,
+          1100
+        ]
+      },
+      {
+        "name": "altitude",
+        "type": "read",
+        "unit": "m",
+        "range": [
+          -500,
+          9000
+        ]
+      }
+    ],
+    "defaults": {
+      "poll_interval_ms": 1000
+    }
+  },
+  "light_sensor": {
+    "protocol_version": "hdp-1",
+    "vendor_id": "hak-v2",
+    "product_id": "bh1750",
+    "device_class": "sensor",
+    "serial_number": "SN-LIGHT_SENSOR-0001",
+    "capabilities": [
+      {
+        "name": "illuminance",
+        "type": "read",
+        "unit": "lux",
+        "range": [
+          0,
+          65535
+        ]
+      }
+    ],
+    "defaults": {
+      "poll_interval_ms": 1000
+    }
+  },
+  "sound_microphone": {
+    "protocol_version": "hdp-1",
+    "vendor_id": "hak-v2",
+    "product_id": "max4466",
+    "device_class": "sensor",
+    "serial_number": "SN-SOUND_MICROPHONE-0001",
+    "capabilities": [
+      {
+        "name": "sound_level",
+        "type": "read",
+        "unit": "dB",
+        "range": [
+          20,
+          120
+        ]
+      },
+      {
+        "name": "frequency",
+        "type": "read",
+        "unit": "Hz",
+        "range": [
+          20,
+          20000
+        ]
+      }
+    ],
+    "defaults": {
+      "poll_interval_ms": 1000
+    }
+  },
+  "distance_ultrasonic": {
+    "protocol_version": "hdp-1",
+    "vendor_id": "hak-v2",
+    "product_id": "hc-sr04",
+    "device_class": "sensor",
+    "serial_number": "SN-DISTANCE_ULTRASONIC-0001",
+    "capabilities": [
+      {
+        "name": "distance",
+        "type": "read",
+        "unit": "m",
+        "range": [
+          0.02,
+          4.0
+        ]
+      }
+    ],
+    "defaults": {
+      "poll_interval_ms": 1000
+    }
+  },
+  "distance_laser": {
+    "protocol_version": "hdp-1",
+    "vendor_id": "hak-v2",
+    "product_id": "vl53l1x",
+    "device_class": "sensor",
+    "serial_number": "SN-DISTANCE_LASER-0001",
+    "capabilities": [
+      {
+        "name": "distance",
+        "type": "read",
+        "unit": "mm",
+        "range": [
+          2,
+          4000
+        ]
+      }
+    ],
+    "defaults": {
+      "poll_interval_ms": 1000
+    }
+  },
+  "vibration_sensor": {
+    "protocol_version": "hdp-1",
+    "vendor_id": "hak-v2",
+    "product_id": "adxl345",
+    "device_class": "sensor",
+    "serial_number": "SN-VIBRATION_SENSOR-0001",
+    "capabilities": [
+      {
+        "name": "vibration",
+        "type": "read",
+        "unit": "g",
+        "range": [
+          -16,
+          16
+        ]
+      }
+    ],
+    "defaults": {
+      "poll_interval_ms": 1000
+    }
+  },
+  "current_sensor": {
+    "protocol_version": "hdp-1",
+    "vendor_id": "hak-v2",
+    "product_id": "ina219",
+    "device_class": "sensor",
+    "serial_number": "SN-CURRENT_SENSOR-0001",
+    "capabilities": [
+      {
+        "name": "current",
+        "type": "read",
+        "unit": "A",
+        "range": [
+          -3.2,
+          3.2
+        ]
+      },
+      {
+        "name": "voltage",
+        "type": "read",
+        "unit": "V",
+        "range": [
+          0,
+          26
+        ]
+      }
+    ],
+    "defaults": {
+      "poll_interval_ms": 1000
+    }
+  },
+  "voltage_sensor": {
+    "protocol_version": "hdp-1",
+    "vendor_id": "hak-v2",
+    "product_id": "ads1115",
+    "device_class": "sensor",
+    "serial_number": "SN-VOLTAGE_SENSOR-0001",
+    "capabilities": [
+      {
+        "name": "voltage",
+        "type": "read",
+        "unit": "V",
+        "range": [
+          -6.144,
+          6.144
+        ]
+      }
+    ],
+    "defaults": {
+      "poll_interval_ms": 1000
+    }
+  },
+  "power_meter": {
+    "protocol_version": "hdp-1",
+    "vendor_id": "hak-v2",
+    "product_id": "pzem004t",
+    "device_class": "sensor",
+    "serial_number": "SN-POWER_METER-0001",
+    "capabilities": [
+      {
+        "name": "power",
+        "type": "read",
+        "unit": "W",
+        "range": [
+          0,
+          9999
+        ]
+      },
+      {
+        "name": "energy",
+        "type": "read",
+        "unit": "kWh",
+        "range": [
+          0,
+          999999
+        ]
+      }
+    ],
+    "defaults": {
+      "poll_interval_ms": 1000
+    }
+  },
+  "air_quality": {
+    "protocol_version": "hdp-1",
+    "vendor_id": "hak-v2",
+    "product_id": "bme280",
+    "device_class": "sensor",
+    "serial_number": "SN-AIR_QUALITY-0001",
+    "capabilities": [
+      {
+        "name": "temperature",
+        "type": "read",
+        "unit": "°C",
+        "range": [
+          -40,
+          85
+        ]
+      },
+      {
+        "name": "humidity",
+        "type": "read",
+        "unit": "%",
+        "range": [
+          0,
+          100
+        ]
+      },
+      {
+        "name": "pressure",
+        "type": "read",
+        "unit": "hPa",
+        "range": [
+          300,
+          1100
+        ]
+      }
+    ],
+    "defaults": {
+      "poll_interval_ms": 1000
+    }
+  },
+  "gps_module": {
+    "protocol_version": "hdp-1",
+    "vendor_id": "hak-v2",
+    "product_id": "ubx-m8",
+    "device_class": "sensor",
+    "serial_number": "SN-GPS_MODULE-0001",
+    "capabilities": [
+      {
+        "name": "latitude",
+        "type": "read",
+        "unit": "°",
+        "range": [
+          -90,
+          90
+        ]
+      },
+      {
+        "name": "longitude",
+        "type": "read",
+        "unit": "°",
+        "range": [
+          -180,
+          180
+        ]
+      },
+      {
+        "name": "altitude",
+        "type": "read",
+        "unit": "m",
+        "range": [
+          -500,
+          9000
+        ]
+      },
+      {
+        "name": "speed",
+        "type": "read",
+        "unit": "km/h",
+        "range": [
+          0,
+          500
+        ]
+      }
+    ],
+    "defaults": {
+      "poll_interval_ms": 1000
+    }
+  },
+  "radar_24ghz": {
+    "protocol_version": "hdp-1",
+    "vendor_id": "hak-v2",
+    "product_id": "hbr24c16",
+    "device_class": "sensor",
+    "serial_number": "SN-RADAR_24GHZ-0001",
+    "capabilities": [
+      {
+        "name": "target_distance",
+        "type": "read",
+        "unit": "m",
+        "range": [
+          0.5,
+          20
+        ]
+      },
+      {
+        "name": "target_speed",
+        "type": "read",
+        "unit": "m/s",
+        "range": [
+          -10,
+          10
+        ]
+      },
+      {
+        "name": "target_angle",
+        "type": "read",
+        "unit": "°",
+        "range": [
+          -60,
+          60
+        ]
+      }
+    ],
+    "defaults": {
+      "poll_interval_ms": 1000
+    }
+  },
+  "camera_1080p": {
+    "protocol_version": "hdp-1",
+    "vendor_id": "hak-v2",
+    "product_id": "ov2710",
+    "device_class": "sensor",
+    "serial_number": "SN-CAMERA_1080P-0001",
+    "capabilities": [
+      {
+        "name": "frame",
+        "type": "notify",
+        "unit": "bytes",
+        "range": [
+          0,
+          0
+        ]
+      },
+      {
+        "name": "resolution",
+        "type": "rw",
+        "unit": "px",
+        "range": [
+          0,
+          1920
+        ]
+      }
+    ],
+    "defaults": {
+      "poll_interval_ms": 1000
+    }
+  },
+  "depth_camera": {
+    "protocol_version": "hdp-1",
+    "vendor_id": "hak-v2",
+    "product_id": "realsense",
+    "device_class": "sensor",
+    "serial_number": "SN-DEPTH_CAMERA-0001",
+    "capabilities": [
+      {
+        "name": "depth_frame",
+        "type": "notify",
+        "unit": "bytes",
+        "range": [
+          0,
+          0
+        ]
+      },
+      {
+        "name": "point_cloud",
+        "type": "notify",
+        "unit": "bytes",
+        "range": [
+          0,
+          0
+        ]
+      }
+    ],
+    "defaults": {
+      "poll_interval_ms": 1000
+    }
+  },
+  "encoder_quadrature": {
+    "protocol_version": "hdp-1",
+    "vendor_id": "hak-v2",
+    "product_id": "as5047p",
+    "device_class": "sensor",
+    "serial_number": "SN-ENCODER_QUADRATURE-0001",
+    "capabilities": [
+      {
+        "name": "angle",
+        "type": "read",
+        "unit": "°",
+        "range": [
+          0,
+          360
+        ]
+      },
+      {
+        "name": "velocity",
+        "type": "read",
+        "unit": "°/s",
+        "range": [
+          -2000,
+          2000
+        ]
+      }
+    ],
+    "defaults": {
+      "poll_interval_ms": 1000
+    }
+  },
+  "ecg_sensor": {
+    "protocol_version": "hdp-1",
+    "vendor_id": "hak-v2",
+    "product_id": "ad8232",
+    "device_class": "sensor",
+    "serial_number": "SN-ECG_SENSOR-0001",
+    "capabilities": [
+      {
+        "name": "ecg",
+        "type": "notify",
+        "unit": "mV",
+        "range": [
+          -5,
+          5
+        ]
+      },
+      {
+        "name": "heart_rate",
+        "type": "read",
+        "unit": "bpm",
+        "range": [
+          30,
+          230
+        ]
+      }
+    ],
+    "defaults": {
+      "poll_interval_ms": 1000
+    }
+  },
+  "blood_oximeter": {
+    "protocol_version": "hdp-1",
+    "vendor_id": "hak-v2",
+    "product_id": "max30100",
+    "device_class": "sensor",
+    "serial_number": "SN-BLOOD_OXIMETER-0001",
+    "capabilities": [
+      {
+        "name": "spo2",
+        "type": "read",
+        "unit": "%",
+        "range": [
+          0,
+          100
+        ]
+      },
+      {
+        "name": "pulse_rate",
+        "type": "read",
+        "unit": "bpm",
+        "range": [
+          20,
+          250
+        ]
+      }
+    ],
+    "defaults": {
+      "poll_interval_ms": 1000
+    }
+  },
+  "touch_sensor_array": {
+    "protocol_version": "hdp-1",
+    "vendor_id": "hak-v2",
+    "product_id": "mpr121",
+    "device_class": "sensor",
+    "serial_number": "SN-TOUCH_SENSOR_ARRAY-0001",
+    "capabilities": [
+      {
+        "name": "touch_state",
+        "type": "read",
+        "unit": "bitmask",
+        "range": [
+          0,
+          1023
+        ]
+      }
+    ],
+    "defaults": {
+      "poll_interval_ms": 1000
+    }
+  },
+  "dc_motor": {
+    "protocol_version": "hdp-1",
+    "vendor_id": "hak-v2",
+    "product_id": "tb6612",
+    "device_class": "actuator",
+    "serial_number": "SN-DC_MOTOR-0001",
+    "capabilities": [
+      {
+        "name": "speed",
+        "type": "rw",
+        "unit": "",
+        "range": [
+          -1.0,
+          1.0
+        ]
+      },
+      {
+        "name": "direction",
+        "type": "rw",
+        "unit": "",
+        "range": [
+          0,
+          1
+        ]
+      },
+      {
+        "name": "brake",
+        "type": "write",
+        "unit": "",
+        "range": [
+          0,
+          1
+        ]
+      }
+    ],
+    "defaults": {
+      "poll_interval_ms": 1000
+    }
+  },
+  "stepper_motor": {
+    "protocol_version": "hdp-1",
+    "vendor_id": "hak-v2",
+    "product_id": "a4988",
+    "device_class": "actuator",
+    "serial_number": "SN-STEPPER_MOTOR-0001",
+    "capabilities": [
+      {
+        "name": "step_angle",
+        "type": "rw",
+        "unit": "°",
+        "range": [
+          0,
+          360
+        ]
+      },
+      {
+        "name": "speed",
+        "type": "rw",
+        "unit": "rpm",
+        "range": [
+          0,
+          3000
+        ]
+      },
+      {
+        "name": "enable",
+        "type": "write",
+        "unit": "",
+        "range": [
+          0,
+          1
+        ]
+      }
+    ],
+    "defaults": {
+      "poll_interval_ms": 1000
+    }
+  },
+  "servo_motor": {
+    "protocol_version": "hdp-1",
+    "vendor_id": "hak-v2",
+    "product_id": "mg90s",
+    "device_class": "actuator",
+    "serial_number": "SN-SERVO_MOTOR-0001",
+    "capabilities": [
+      {
+        "name": "angle",
+        "type": "rw",
+        "unit": "°",
+        "range": [
+          0,
+          180
+        ]
+      },
+      {
+        "name": "speed",
+        "type": "rw",
+        "unit": "°/s",
+        "range": [
+          0,
+          600
+        ]
+      }
+    ],
+    "defaults": {
+      "poll_interval_ms": 1000
+    }
+  },
+  "brushless_motor": {
+    "protocol_version": "hdp-1",
+    "vendor_id": "hak-v2",
+    "product_id": "esc-30a",
+    "device_class": "actuator",
+    "serial_number": "SN-BRUSHLESS_MOTOR-0001",
+    "capabilities": [
+      {
+        "name": "throttle",
+        "type": "rw",
+        "unit": "",
+        "range": [
+          0.0,
+          1.0
+        ]
+      },
+      {
+        "name": "rpm",
+        "type": "read",
+        "unit": "rpm",
+        "range": [
+          0,
+          50000
+        ]
+      }
+    ],
+    "defaults": {
+      "poll_interval_ms": 1000
+    }
+  },
+  "led_rgb": {
+    "protocol_version": "hdp-1",
+    "vendor_id": "hak-v2",
+    "product_id": "ws2812",
+    "device_class": "actuator",
+    "serial_number": "SN-LED_RGB-0001",
+    "capabilities": [
+      {
+        "name": "red",
+        "type": "rw",
+        "unit": "",
+        "range": [
+          0,
+          255
+        ]
+      },
+      {
+        "name": "green",
+        "type": "rw",
+        "unit": "",
+        "range": [
+          0,
+          255
+        ]
+      },
+      {
+        "name": "blue",
+        "type": "rw",
+        "unit": "",
+        "range": [
+          0,
+          255
+        ]
+      },
+      {
+        "name": "brightness",
+        "type": "rw",
+        "unit": "",
+        "range": [
+          0,
+          255
+        ]
+      }
+    ],
+    "defaults": {
+      "poll_interval_ms": 1000
+    }
+  },
+  "relay_module": {
+    "protocol_version": "hdp-1",
+    "vendor_id": "hak-v2",
+    "product_id": "relay-4ch",
+    "device_class": "actuator",
+    "serial_number": "SN-RELAY_MODULE-0001",
+    "capabilities": [
+      {
+        "name": "channel_1",
+        "type": "write",
+        "unit": "",
+        "range": [
+          0,
+          1
+        ]
+      },
+      {
+        "name": "channel_2",
+        "type": "write",
+        "unit": "",
+        "range": [
+          0,
+          1
+        ]
+      },
+      {
+        "name": "channel_3",
+        "type": "write",
+        "unit": "",
+        "range": [
+          0,
+          1
+        ]
+      },
+      {
+        "name": "channel_4",
+        "type": "write",
+        "unit": "",
+        "range": [
+          0,
+          1
+        ]
+      }
+    ],
+    "defaults": {
+      "poll_interval_ms": 1000
+    }
+  },
+  "solenoid_valve": {
+    "protocol_version": "hdp-1",
+    "vendor_id": "hak-v2",
+    "product_id": "sv-12v",
+    "device_class": "actuator",
+    "serial_number": "SN-SOLENOID_VALVE-0001",
+    "capabilities": [
+      {
+        "name": "state",
+        "type": "rw",
+        "unit": "",
+        "range": [
+          0,
+          1
+        ]
+      },
+      {
+        "name": "flow_rate",
+        "type": "read",
+        "unit": "L/min",
+        "range": [
+          0,
+          10
+        ]
+      }
+    ],
+    "defaults": {
+      "poll_interval_ms": 1000
+    }
+  },
+  "electric_cylinder": {
+    "protocol_version": "hdp-1",
+    "vendor_id": "hak-v2",
+    "product_id": "ec-500mm",
+    "device_class": "actuator",
+    "serial_number": "SN-ELECTRIC_CYLINDER-0001",
+    "capabilities": [
+      {
+        "name": "position",
+        "type": "rw",
+        "unit": "mm",
+        "range": [
+          0,
+          500
+        ]
+      },
+      {
+        "name": "speed",
+        "type": "rw",
+        "unit": "mm/s",
+        "range": [
+          0,
+          50
+        ]
+      },
+      {
+        "name": "force",
+        "type": "read",
+        "unit": "N",
+        "range": [
+          0,
+          2000
+        ]
+      }
+    ],
+    "defaults": {
+      "poll_interval_ms": 1000
+    }
+  },
+  "heater_element": {
+    "protocol_version": "hdp-1",
+    "vendor_id": "hak-v2",
+    "product_id": "ht-200w",
+    "device_class": "actuator",
+    "serial_number": "SN-HEATER_ELEMENT-0001",
+    "capabilities": [
+      {
+        "name": "target_temp",
+        "type": "rw",
+        "unit": "°C",
+        "range": [
+          20,
+          150
+        ]
+      },
+      {
+        "name": "power",
+        "type": "rw",
+        "unit": "W",
+        "range": [
+          0,
+          200
+        ]
+      },
+      {
+        "name": "current_temp",
+        "type": "read",
+        "unit": "°C",
+        "range": [
+          0,
+          200
+        ]
+      }
+    ],
+    "defaults": {
+      "poll_interval_ms": 1000
+    }
+  },
+  "pump_diaphragm": {
+    "protocol_version": "hdp-1",
+    "vendor_id": "hak-v2",
+    "product_id": "dp-6v",
+    "device_class": "actuator",
+    "serial_number": "SN-PUMP_DIAPHRAGM-0001",
+    "capabilities": [
+      {
+        "name": "flow_rate",
+        "type": "rw",
+        "unit": "mL/min",
+        "range": [
+          0,
+          500
+        ]
+      },
+      {
+        "name": "direction",
+        "type": "rw",
+        "unit": "",
+        "range": [
+          0,
+          1
+        ]
+      }
+    ],
+    "defaults": {
+      "poll_interval_ms": 1000
+    }
+  },
+  "fan_blower": {
+    "protocol_version": "hdp-1",
+    "vendor_id": "hak-v2",
+    "product_id": "fan-120mm",
+    "device_class": "actuator",
+    "serial_number": "SN-FAN_BLOWER-0001",
+    "capabilities": [
+      {
+        "name": "speed",
+        "type": "rw",
+        "unit": "rpm",
+        "range": [
+          0,
+          3000
+        ]
+      },
+      {
+        "name": "mode",
+        "type": "rw",
+        "unit": "",
+        "range": [
+          0,
+          2
+        ]
+      }
+    ],
+    "defaults": {
+      "poll_interval_ms": 1000
+    }
+  },
+  "piezo_buzzer": {
+    "protocol_version": "hdp-1",
+    "vendor_id": "hak-v2",
+    "product_id": "bz-piezo",
+    "device_class": "actuator",
+    "serial_number": "SN-PIEZO_BUZZER-0001",
+    "capabilities": [
+      {
+        "name": "frequency",
+        "type": "rw",
+        "unit": "Hz",
+        "range": [
+          400,
+          4000
+        ]
+      },
+      {
+        "name": "volume",
+        "type": "rw",
+        "unit": "",
+        "range": [
+          0,
+          10
+        ]
+      }
+    ],
+    "defaults": {
+      "poll_interval_ms": 1000
+    }
+  },
+  "vibration_motor": {
+    "protocol_version": "hdp-1",
+    "vendor_id": "hak-v2",
+    "product_id": "vibr-3v",
+    "device_class": "actuator",
+    "serial_number": "SN-VIBRATION_MOTOR-0001",
+    "capabilities": [
+      {
+        "name": "intensity",
+        "type": "rw",
+        "unit": "",
+        "range": [
+          0,
+          100
+        ]
+      }
+    ],
+    "defaults": {
+      "poll_interval_ms": 1000
+    }
+  },
+  "speaker_amplifier": {
+    "protocol_version": "hdp-1",
+    "vendor_id": "hak-v2",
+    "product_id": "pam8400",
+    "device_class": "actuator",
+    "serial_number": "SN-SPEAKER_AMPLIFIER-0001",
+    "capabilities": [
+      {
+        "name": "volume",
+        "type": "rw",
+        "unit": "",
+        "range": [
+          0,
+          30
+        ]
+      },
+      {
+        "name": "audio",
+        "type": "write",
+        "unit": "bytes",
+        "range": [
+          0,
+          0
+        ]
+      }
+    ],
+    "defaults": {
+      "poll_interval_ms": 1000
+    }
+  },
+  "electromagnet": {
+    "protocol_version": "hdp-1",
+    "vendor_id": "hak-v2",
+    "product_id": "em-24v",
+    "device_class": "actuator",
+    "serial_number": "SN-ELECTROMAGNET-0001",
+    "capabilities": [
+      {
+        "name": "state",
+        "type": "rw",
+        "unit": "",
+        "range": [
+          0,
+          1
+        ]
+      },
+      {
+        "name": "force",
+        "type": "read",
+        "unit": "N",
+        "range": [
+          0,
+          500
+        ]
+      }
+    ],
+    "defaults": {
+      "poll_interval_ms": 1000
+    }
+  },
+  "air_compressor": {
+    "protocol_version": "hdp-1",
+    "vendor_id": "hak-v2",
+    "product_id": "ac-12v",
+    "device_class": "actuator",
+    "serial_number": "SN-AIR_COMPRESSOR-0001",
+    "capabilities": [
+      {
+        "name": "pressure",
+        "type": "rw",
+        "unit": "bar",
+        "range": [
+          0,
+          8
+        ]
+      },
+      {
+        "name": "power",
+        "type": "rw",
+        "unit": "W",
+        "range": [
+          0,
+          200
+        ]
+      }
+    ],
+    "defaults": {
+      "poll_interval_ms": 1000
+    }
+  },
+  "water_valve_smart": {
+    "protocol_version": "hdp-1",
+    "vendor_id": "hak-v2",
+    "product_id": "wv-12v",
+    "device_class": "actuator",
+    "serial_number": "SN-WATER_VALVE_SMART-0001",
+    "capabilities": [
+      {
+        "name": "state",
+        "type": "rw",
+        "unit": "",
+        "range": [
+          0,
+          1
+        ]
+      },
+      {
+        "name": "flow",
+        "type": "read",
+        "unit": "L/min",
+        "range": [
+          0,
+          30
+        ]
+      }
+    ],
+    "defaults": {
+      "poll_interval_ms": 1000
+    }
+  },
+  "push_button": {
+    "protocol_version": "hdp-1",
+    "vendor_id": "hak-v2",
+    "product_id": "btn-spst",
+    "device_class": "io",
+    "serial_number": "SN-PUSH_BUTTON-0001",
+    "capabilities": [
+      {
+        "name": "pressed",
+        "type": "notify",
+        "unit": "",
+        "range": [
+          0,
+          1
+        ]
+      },
+      {
+        "name": "click_count",
+        "type": "read",
+        "unit": "",
+        "range": [
+          0,
+          9999
+        ]
+      }
+    ],
+    "defaults": {
+      "poll_interval_ms": 1000
+    }
+  },
+  "rotary_encoder_io": {
+    "protocol_version": "hdp-1",
+    "vendor_id": "hak-v2",
+    "product_id": "enc-rotary",
+    "device_class": "io",
+    "serial_number": "SN-ROTARY_ENCODER_IO-0001",
+    "capabilities": [
+      {
+        "name": "position",
+        "type": "read",
+        "unit": "count",
+        "range": [
+          0,
+          1024
+        ]
+      },
+      {
+        "name": "push",
+        "type": "notify",
+        "unit": "",
+        "range": [
+          0,
+          1
+        ]
+      }
+    ],
+    "defaults": {
+      "poll_interval_ms": 1000
+    }
+  },
+  "potentiometer": {
+    "protocol_version": "hdp-1",
+    "vendor_id": "hak-v2",
+    "product_id": "pot-10k",
+    "device_class": "io",
+    "serial_number": "SN-POTENTIOMETER-0001",
+    "capabilities": [
+      {
+        "name": "value",
+        "type": "read",
+        "unit": "%",
+        "range": [
+          0,
+          100
+        ]
+      }
+    ],
+    "defaults": {
+      "poll_interval_ms": 1000
+    }
+  },
+  "oled_display": {
+    "protocol_version": "hdp-1",
+    "vendor_id": "hak-v2",
+    "product_id": "ssd1306",
+    "device_class": "io",
+    "serial_number": "SN-OLED_DISPLAY-0001",
+    "capabilities": [
+      {
+        "name": "clear",
+        "type": "exec",
+        "unit": "",
+        "range": []
+      },
+      {
+        "name": "write_text",
+        "type": "exec",
+        "unit": "",
+        "range": []
+      },
+      {
+        "name": "draw_pixel",
+        "type": "exec",
+        "unit": "",
+        "range": []
+      }
+    ],
+    "defaults": {
+      "poll_interval_ms": 1000
+    }
+  },
+  "lcd_16x2": {
+    "protocol_version": "hdp-1",
+    "vendor_id": "hak-v2",
+    "product_id": "hd44780",
+    "device_class": "io",
+    "serial_number": "SN-LCD_16X2-0001",
+    "capabilities": [
+      {
+        "name": "clear",
+        "type": "exec",
+        "unit": "",
+        "range": []
+      },
+      {
+        "name": "write",
+        "type": "exec",
+        "unit": "",
+        "range": []
+      },
+      {
+        "name": "backlight",
+        "type": "rw",
+        "unit": "",
+        "range": [
+          0,
+          1
+        ]
+      }
+    ],
+    "defaults": {
+      "poll_interval_ms": 1000
+    }
+  },
+  "seven_segment_4digit": {
+    "protocol_version": "hdp-1",
+    "vendor_id": "hak-v2",
+    "product_id": "tm1637",
+    "device_class": "io",
+    "serial_number": "SN-SEVEN_SEGMENT_4DIGIT-0001",
+    "capabilities": [
+      {
+        "name": "display",
+        "type": "exec",
+        "unit": "",
+        "range": []
+      },
+      {
+        "name": "brightness",
+        "type": "rw",
+        "unit": "",
+        "range": [
+          0,
+          7
+        ]
+      }
+    ],
+    "defaults": {
+      "poll_interval_ms": 1000
+    }
+  },
+  "led_matrix_8x8": {
+    "protocol_version": "hdp-1",
+    "vendor_id": "hak-v2",
+    "product_id": "max7219",
+    "device_class": "io",
+    "serial_number": "SN-LED_MATRIX_8X8-0001",
+    "capabilities": [
+      {
+        "name": "display",
+        "type": "exec",
+        "unit": "",
+        "range": []
+      },
+      {
+        "name": "intensity",
+        "type": "rw",
+        "unit": "",
+        "range": [
+          0,
+          15
+        ]
+      }
+    ],
+    "defaults": {
+      "poll_interval_ms": 1000
+    }
+  },
+  "keypad_4x4": {
+    "protocol_version": "hdp-1",
+    "vendor_id": "hak-v2",
+    "product_id": "kp-4x4",
+    "device_class": "io",
+    "serial_number": "SN-KEYPAD_4X4-0001",
+    "capabilities": [
+      {
+        "name": "key_pressed",
+        "type": "notify",
+        "unit": "",
+        "range": [
+          0,
+          15
+        ]
+      }
+    ],
+    "defaults": {
+      "poll_interval_ms": 1000
+    }
+  },
+  "gpio_expander": {
+    "protocol_version": "hdp-1",
+    "vendor_id": "hak-v2",
+    "product_id": "mcp23017",
+    "device_class": "io",
+    "serial_number": "SN-GPIO_EXPANDER-0001",
+    "capabilities": [
+      {
+        "name": "port_a",
+        "type": "rw",
+        "unit": "",
+        "range": [
+          0,
+          255
+        ]
+      },
+      {
+        "name": "port_b",
+        "type": "rw",
+        "unit": "",
+        "range": [
+          0,
+          255
+        ]
+      }
+    ],
+    "defaults": {
+      "poll_interval_ms": 1000
+    }
+  },
+  "adc_8channel": {
+    "protocol_version": "hdp-1",
+    "vendor_id": "hak-v2",
+    "product_id": "ads1018",
+    "device_class": "io",
+    "serial_number": "SN-ADC_8CHANNEL-0001",
+    "capabilities": [
+      {
+        "name": "ch0",
+        "type": "read",
+        "unit": "V",
+        "range": [
+          0,
+          3.3
+        ]
+      },
+      {
+        "name": "ch1",
+        "type": "read",
+        "unit": "V",
+        "range": [
+          0,
+          3.3
+        ]
+      },
+      {
+        "name": "ch2",
+        "type": "read",
+        "unit": "V",
+        "range": [
+          0,
+          3.3
+        ]
+      },
+      {
+        "name": "ch3",
+        "type": "read",
+        "unit": "V",
+        "range": [
+          0,
+          3.3
+        ]
+      }
+    ],
+    "defaults": {
+      "poll_interval_ms": 1000
+    }
+  },
+  "dac_12bit": {
+    "protocol_version": "hdp-1",
+    "vendor_id": "hak-v2",
+    "product_id": "mcp4725",
+    "device_class": "io",
+    "serial_number": "SN-DAC_12BIT-0001",
+    "capabilities": [
+      {
+        "name": "output",
+        "type": "rw",
+        "unit": "V",
+        "range": [
+          0,
+          3.3
+        ]
+      }
+    ],
+    "defaults": {
+      "poll_interval_ms": 1000
+    }
+  },
+  "uart_bridge": {
+    "protocol_version": "hdp-1",
+    "vendor_id": "hak-v2",
+    "product_id": "ch340",
+    "device_class": "io",
+    "serial_number": "SN-UART_BRIDGE-0001",
+    "capabilities": [
+      {
+        "name": "baudrate",
+        "type": "rw",
+        "unit": "",
+        "range": [
+          1200,
+          921600
+        ]
+      },
+      {
+        "name": "data",
+        "type": "notify",
+        "unit": "bytes",
+        "range": [
+          0,
+          0
+        ]
+      }
+    ],
+    "defaults": {
+      "poll_interval_ms": 1000
+    }
+  },
+  "exoskeleton_4dof": {
+    "protocol_version": "hdp-1",
+    "vendor_id": "hak-v2",
+    "product_id": "lower-limb-exo",
+    "device_class": "exoskeleton",
+    "serial_number": "SN-EXOSKELETON_4DOF-0001",
+    "capabilities": [
+      {
+        "name": "joint_pos",
+        "type": "rw",
+        "unit": "rad",
+        "range": [
+          -3.14,
+          3.14
+        ]
+      },
+      {
+        "name": "joint_vel",
+        "type": "read",
+        "unit": "rad/s",
+        "range": [
+          -5.0,
+          5.0
+        ]
+      },
+      {
+        "name": "joint_effort",
+        "type": "rw",
+        "unit": "Nm",
+        "range": [
+          0,
+          80
+        ]
+      },
+      {
+        "name": "imu_roll",
+        "type": "read",
+        "unit": "°",
+        "range": [
+          -180,
+          180
+        ]
+      },
+      {
+        "name": "imu_pitch",
+        "type": "read",
+        "unit": "°",
+        "range": [
+          -180,
+          180
+        ]
+      },
+      {
+        "name": "estop",
+        "type": "exec",
+        "unit": "",
+        "range": []
+      }
+    ],
+    "defaults": {
+      "poll_interval_ms": 1000
+    }
+  },
+  "mobile_base_diff": {
+    "protocol_version": "hdp-1",
+    "vendor_id": "hak-v2",
+    "product_id": "diff-drive",
+    "device_class": "robot",
+    "serial_number": "SN-MOBILE_BASE_DIFF-0001",
+    "capabilities": [
+      {
+        "name": "left_speed",
+        "type": "rw",
+        "unit": "m/s",
+        "range": [
+          -1.0,
+          1.0
+        ]
+      },
+      {
+        "name": "right_speed",
+        "type": "rw",
+        "unit": "m/s",
+        "range": [
+          -1.0,
+          1.0
+        ]
+      },
+      {
+        "name": "odom_x",
+        "type": "read",
+        "unit": "m",
+        "range": [
+          -100,
+          100
+        ]
+      },
+      {
+        "name": "odom_y",
+        "type": "read",
+        "unit": "m",
+        "range": [
+          -100,
+          100
+        ]
+      },
+      {
+        "name": "odom_theta",
+        "type": "read",
+        "unit": "°",
+        "range": [
+          -180,
+          180
+        ]
+      }
+    ],
+    "defaults": {
+      "poll_interval_ms": 1000
+    }
+  },
+  "mobile_base_mecanum": {
+    "protocol_version": "hdp-1",
+    "vendor_id": "hak-v2",
+    "product_id": "mecanum-4w",
+    "device_class": "robot",
+    "serial_number": "SN-MOBILE_BASE_MECANUM-0001",
+    "capabilities": [
+      {
+        "name": "vx",
+        "type": "rw",
+        "unit": "m/s",
+        "range": [
+          -2.0,
+          2.0
+        ]
+      },
+      {
+        "name": "vy",
+        "type": "rw",
+        "unit": "m/s",
+        "range": [
+          -2.0,
+          2.0
+        ]
+      },
+      {
+        "name": "omega",
+        "type": "rw",
+        "unit": "rad/s",
+        "range": [
+          -3.14,
+          3.14
+        ]
+      },
+      {
+        "name": "odom",
+        "type": "read",
+        "unit": "m",
+        "range": [
+          -100,
+          100
+        ]
+      }
+    ],
+    "defaults": {
+      "poll_interval_ms": 1000
+    }
+  },
+  "robotic_arm_6dof": {
+    "protocol_version": "hdp-1",
+    "vendor_id": "hak-v2",
+    "product_id": "arm-6dof",
+    "device_class": "robot",
+    "serial_number": "SN-ROBOTIC_ARM_6DOF-0001",
+    "capabilities": [
+      {
+        "name": "j1",
+        "type": "rw",
+        "unit": "rad",
+        "range": [
+          -3.14,
+          3.14
+        ]
+      },
+      {
+        "name": "j2",
+        "type": "rw",
+        "unit": "rad",
+        "range": [
+          -1.57,
+          1.57
+        ]
+      },
+      {
+        "name": "j3",
+        "type": "rw",
+        "unit": "rad",
+        "range": [
+          -1.57,
+          1.57
+        ]
+      },
+      {
+        "name": "j4",
+        "type": "rw",
+        "unit": "rad",
+        "range": [
+          -3.14,
+          3.14
+        ]
+      },
+      {
+        "name": "j5",
+        "type": "rw",
+        "unit": "rad",
+        "range": [
+          -1.57,
+          1.57
+        ]
+      },
+      {
+        "name": "j6",
+        "type": "rw",
+        "unit": "rad",
+        "range": [
+          -3.14,
+          3.14
+        ]
+      },
+      {
+        "name": "ee_pos",
+        "type": "read",
+        "unit": "m",
+        "range": [
+          0,
+          2
+        ]
+      }
+    ],
+    "defaults": {
+      "poll_interval_ms": 1000
+    }
+  },
+  "robotic_arm_7dof": {
+    "protocol_version": "hdp-1",
+    "vendor_id": "hak-v2",
+    "product_id": "arm-7dof",
+    "device_class": "robot",
+    "serial_number": "SN-ROBOTIC_ARM_7DOF-0001",
+    "capabilities": [
+      {
+        "name": "j1-j7",
+        "type": "rw",
+        "unit": "rad",
+        "range": [
+          -3.14,
+          3.14
+        ]
+      },
+      {
+        "name": "ee_pos",
+        "type": "read",
+        "unit": "m",
+        "range": [
+          0,
+          3
+        ]
+      }
+    ],
+    "defaults": {
+      "poll_interval_ms": 1000
+    }
+  },
+  "parallel_gripper": {
+    "protocol_version": "hdp-1",
+    "vendor_id": "hak-v2",
+    "product_id": "grip-p",
+    "device_class": "robot",
+    "serial_number": "SN-PARALLEL_GRIPPER-0001",
+    "capabilities": [
+      {
+        "name": "opening",
+        "type": "rw",
+        "unit": "mm",
+        "range": [
+          0,
+          80
+        ]
+      },
+      {
+        "name": "force",
+        "type": "rw",
+        "unit": "N",
+        "range": [
+          0,
+          50
+        ]
+      },
+      {
+        "name": "status",
+        "type": "read",
+        "unit": "",
+        "range": [
+          0,
+          1
+        ]
+      }
+    ],
+    "defaults": {
+      "poll_interval_ms": 1000
+    }
+  },
+  "parallel_gripper_rg2": {
+    "protocol_version": "hdp-1",
+    "vendor_id": "hak-v2",
+    "product_id": "rg2",
+    "device_class": "robot",
+    "serial_number": "SN-PARALLEL_GRIPPER_RG2-0001",
+    "capabilities": [
+      {
+        "name": "width",
+        "type": "rw",
+        "unit": "mm",
+        "range": [
+          0,
+          160
+        ]
+      },
+      {
+        "name": "force",
+        "type": "rw",
+        "unit": "N",
+        "range": [
+          0,
+          100
+        ]
+      }
+    ],
+    "defaults": {
+      "poll_interval_ms": 1000
+    }
+  },
+  "suction_gripper": {
+    "protocol_version": "hdp-1",
+    "vendor_id": "hak-v2",
+    "product_id": "grip-s",
+    "device_class": "robot",
+    "serial_number": "SN-SUCTION_GRIPPER-0001",
+    "capabilities": [
+      {
+        "name": "vacuum",
+        "type": "rw",
+        "unit": "bar",
+        "range": [
+          -0.9,
+          0
+        ]
+      },
+      {
+        "name": "state",
+        "type": "rw",
+        "unit": "",
+        "range": [
+          0,
+          1
+        ]
+      }
+    ],
+    "defaults": {
+      "poll_interval_ms": 1000
+    }
+  },
+  "agv_forklift": {
+    "protocol_version": "hdp-1",
+    "vendor_id": "hak-v2",
+    "product_id": "agv-fork",
+    "device_class": "robot",
+    "serial_number": "SN-AGV_FORKLIFT-0001",
+    "capabilities": [
+      {
+        "name": "speed",
+        "type": "rw",
+        "unit": "m/s",
+        "range": [
+          -1.5,
+          1.5
+        ]
+      },
+      {
+        "name": "fork_height",
+        "type": "rw",
+        "unit": "mm",
+        "range": [
+          0,
+          2500
+        ]
+      },
+      {
+        "name": "load_weight",
+        "type": "read",
+        "unit": "kg",
+        "range": [
+          0,
+          500
+        ]
+      },
+      {
+        "name": "battery",
+        "type": "read",
+        "unit": "%",
+        "range": [
+          0,
+          100
+        ]
+      }
+    ],
+    "defaults": {
+      "poll_interval_ms": 1000
+    }
+  },
+  "delivery_robot": {
+    "protocol_version": "hdp-1",
+    "vendor_id": "hak-v2",
+    "product_id": "deliv-bot",
+    "device_class": "robot",
+    "serial_number": "SN-DELIVERY_ROBOT-0001",
+    "capabilities": [
+      {
+        "name": "speed",
+        "type": "rw",
+        "unit": "m/s",
+        "range": [
+          0,
+          1.2
+        ]
+      },
+      {
+        "name": "cargo",
+        "type": "rw",
+        "unit": "",
+        "range": [
+          0,
+          1
+        ]
+      },
+      {
+        "name": "lidar_scan",
+        "type": "notify",
+        "unit": "bytes",
+        "range": [
+          0,
+          0
+        ]
+      }
+    ],
+    "defaults": {
+      "poll_interval_ms": 1000
+    }
+  },
+  "humanoid_torso": {
+    "protocol_version": "hdp-1",
+    "vendor_id": "hak-v2",
+    "product_id": "humanoid-t",
+    "device_class": "robot",
+    "serial_number": "SN-HUMANOID_TORSO-0001",
+    "capabilities": [
+      {
+        "name": "head_yaw",
+        "type": "rw",
+        "unit": "°",
+        "range": [
+          -90,
+          90
+        ]
+      },
+      {
+        "name": "head_pitch",
+        "type": "rw",
+        "unit": "°",
+        "range": [
+          -30,
+          30
+        ]
+      },
+      {
+        "name": "arm_left",
+        "type": "rw",
+        "unit": "rad",
+        "range": [
+          -3.14,
+          3.14
+        ]
+      },
+      {
+        "name": "arm_right",
+        "type": "rw",
+        "unit": "rad",
+        "range": [
+          -3.14,
+          3.14
+        ]
+      }
+    ],
+    "defaults": {
+      "poll_interval_ms": 1000
+    }
+  },
+  "quadruped_robot": {
+    "protocol_version": "hdp-1",
+    "vendor_id": "hak-v2",
+    "product_id": "quad-4leg",
+    "device_class": "robot",
+    "serial_number": "SN-QUADRUPED_ROBOT-0001",
+    "capabilities": [
+      {
+        "name": "lf_leg",
+        "type": "rw",
+        "unit": "rad",
+        "range": [
+          -1.57,
+          1.57
+        ]
+      },
+      {
+        "name": "rf_leg",
+        "type": "rw",
+        "unit": "rad",
+        "range": [
+          -1.57,
+          1.57
+        ]
+      },
+      {
+        "name": "bl_leg",
+        "type": "rw",
+        "unit": "rad",
+        "range": [
+          -1.57,
+          1.57
+        ]
+      },
+      {
+        "name": "br_leg",
+        "type": "rw",
+        "unit": "rad",
+        "range": [
+          -1.57,
+          1.57
+        ]
+      },
+      {
+        "name": "gait",
+        "type": "rw",
+        "unit": "",
+        "range": [
+          0,
+          5
+        ]
+      }
+    ],
+    "defaults": {
+      "poll_interval_ms": 1000
+    }
+  },
+  "drone_quadrotor": {
+    "protocol_version": "hdp-1",
+    "vendor_id": "hak-v2",
+    "product_id": "drone-q",
+    "device_class": "robot",
+    "serial_number": "SN-DRONE_QUADROTOR-0001",
+    "capabilities": [
+      {
+        "name": "thrust",
+        "type": "rw",
+        "unit": "",
+        "range": [
+          0,
+          1.0
+        ]
+      },
+      {
+        "name": "yaw",
+        "type": "rw",
+        "unit": "°/s",
+        "range": [
+          -120,
+          120
+        ]
+      },
+      {
+        "name": "pitch",
+        "type": "rw",
+        "unit": "°/s",
+        "range": [
+          -120,
+          120
+        ]
+      },
+      {
+        "name": "roll",
+        "type": "rw",
+        "unit": "°/s",
+        "range": [
+          -120,
+          120
+        ]
+      },
+      {
+        "name": "altitude",
+        "type": "read",
+        "unit": "m",
+        "range": [
+          0,
+          100
+        ]
+      }
+    ],
+    "defaults": {
+      "poll_interval_ms": 1000
+    }
+  },
+  "wheelchair_ec": {
+    "protocol_version": "hdp-1",
+    "vendor_id": "hak-v2",
+    "product_id": "wheel-ec",
+    "device_class": "robot",
+    "serial_number": "SN-WHEELCHAIR_EC-0001",
+    "capabilities": [
+      {
+        "name": "left_speed",
+        "type": "rw",
+        "unit": "m/s",
+        "range": [
+          -2.0,
+          2.0
+        ]
+      },
+      {
+        "name": "right_speed",
+        "type": "rw",
+        "unit": "m/s",
+        "range": [
+          -2.0,
+          2.0
+        ]
+      },
+      {
+        "name": "joy_x",
+        "type": "read",
+        "unit": "",
+        "range": [
+          -1,
+          1
+        ]
+      },
+      {
+        "name": "joy_y",
+        "type": "read",
+        "unit": "",
+        "range": [
+          -1,
+          1
+        ]
+      }
+    ],
+    "defaults": {
+      "poll_interval_ms": 1000
+    }
+  },
+  "smart_light_bulb": {
+    "protocol_version": "hdp-1",
+    "vendor_id": "hak-v2",
+    "product_id": "bulb-z",
+    "device_class": "smart_home",
+    "serial_number": "SN-SMART_LIGHT_BULB-0001",
+    "capabilities": [
+      {
+        "name": "on",
+        "type": "rw",
+        "unit": "",
+        "range": [
+          0,
+          1
+        ]
+      },
+      {
+        "name": "brightness",
+        "type": "rw",
+        "unit": "",
+        "range": [
+          0,
+          100
+        ]
+      },
+      {
+        "name": "color_temp",
+        "type": "rw",
+        "unit": "K",
+        "range": [
+          2700,
+          6500
+        ]
+      }
+    ],
+    "defaults": {
+      "poll_interval_ms": 1000
+    }
+  },
+  "smart_lock_door": {
+    "protocol_version": "hdp-1",
+    "vendor_id": "hak-v2",
+    "product_id": "lock-zw",
+    "device_class": "smart_home",
+    "serial_number": "SN-SMART_LOCK_DOOR-0001",
+    "capabilities": [
+      {
+        "name": "locked",
+        "type": "rw",
+        "unit": "",
+        "range": [
+          0,
+          1
+        ]
+      },
+      {
+        "name": "battery",
+        "type": "read",
+        "unit": "%",
+        "range": [
+          0,
+          100
+        ]
+      }
+    ],
+    "defaults": {
+      "poll_interval_ms": 1000
+    }
+  },
+  "smart_thermostat": {
+    "protocol_version": "hdp-1",
+    "vendor_id": "hak-v2",
+    "product_id": "thermo-z",
+    "device_class": "smart_home",
+    "serial_number": "SN-SMART_THERMOSTAT-0001",
+    "capabilities": [
+      {
+        "name": "target_temp",
+        "type": "rw",
+        "unit": "°C",
+        "range": [
+          16,
+          30
+        ]
+      },
+      {
+        "name": "current_temp",
+        "type": "read",
+        "unit": "°C",
+        "range": [
+          0,
+          40
+        ]
+      },
+      {
+        "name": "mode",
+        "type": "rw",
+        "unit": "",
+        "range": [
+          0,
+          3
+        ]
+      }
+    ],
+    "defaults": {
+      "poll_interval_ms": 1000
+    }
+  },
+  "smart_water_valve": {
+    "protocol_version": "hdp-1",
+    "vendor_id": "hak-v2",
+    "product_id": "wvalve",
+    "device_class": "smart_home",
+    "serial_number": "SN-SMART_WATER_VALVE-0001",
+    "capabilities": [
+      {
+        "name": "open",
+        "type": "rw",
+        "unit": "",
+        "range": [
+          0,
+          1
+        ]
+      },
+      {
+        "name": "flow",
+        "type": "read",
+        "unit": "L",
+        "range": [
+          0,
+          9999
+        ]
+      }
+    ],
+    "defaults": {
+      "poll_interval_ms": 1000
+    }
+  },
+  "smart_curtain_motor": {
+    "protocol_version": "hdp-1",
+    "vendor_id": "hak-v2",
+    "product_id": "curtain",
+    "device_class": "smart_home",
+    "serial_number": "SN-SMART_CURTAIN_MOTOR-0001",
+    "capabilities": [
+      {
+        "name": "position",
+        "type": "rw",
+        "unit": "%",
+        "range": [
+          0,
+          100
+        ]
+      },
+      {
+        "name": "state",
+        "type": "read",
+        "unit": "",
+        "range": [
+          0,
+          1
+        ]
+      }
+    ],
+    "defaults": {
+      "poll_interval_ms": 1000
+    }
+  },
+  "security_camera": {
+    "protocol_version": "hdp-1",
+    "vendor_id": "hak-v2",
+    "product_id": "cam-ip",
+    "device_class": "smart_home",
+    "serial_number": "SN-SECURITY_CAMERA-0001",
+    "capabilities": [
+      {
+        "name": "stream",
+        "type": "notify",
+        "unit": "bytes",
+        "range": [
+          0,
+          0
+        ]
+      },
+      {
+        "name": "motion",
+        "type": "notify",
+        "unit": "",
+        "range": [
+          0,
+          1
+        ]
+      },
+      {
+        "name": "ptz",
+        "type": "rw",
+        "unit": "°",
+        "range": [
+          -90,
+          90
+        ]
+      }
+    ],
+    "defaults": {
+      "poll_interval_ms": 1000
+    }
+  },
+  "door_window_sensor": {
+    "protocol_version": "hdp-1",
+    "vendor_id": "hak-v2",
+    "product_id": "dw-sens",
+    "device_class": "smart_home",
+    "serial_number": "SN-DOOR_WINDOW_SENSOR-0001",
+    "capabilities": [
+      {
+        "name": "open",
+        "type": "notify",
+        "unit": "",
+        "range": [
+          0,
+          1
+        ]
+      }
+    ],
+    "defaults": {
+      "poll_interval_ms": 1000
+    }
+  },
+  "smoke_detector": {
+    "protocol_version": "hdp-1",
+    "vendor_id": "hak-v2",
+    "product_id": "smoke-d",
+    "device_class": "smart_home",
+    "serial_number": "SN-SMOKE_DETECTOR-0001",
+    "capabilities": [
+      {
+        "name": "alarm",
+        "type": "notify",
+        "unit": "",
+        "range": [
+          0,
+          1
+        ]
+      },
+      {
+        "name": "battery",
+        "type": "read",
+        "unit": "%",
+        "range": [
+          0,
+          100
+        ]
+      }
+    ],
+    "defaults": {
+      "poll_interval_ms": 1000
+    }
+  },
+  "water_leak_sensor": {
+    "protocol_version": "hdp-1",
+    "vendor_id": "hak-v2",
+    "product_id": "leak-d",
+    "device_class": "smart_home",
+    "serial_number": "SN-WATER_LEAK_SENSOR-0001",
+    "capabilities": [
+      {
+        "name": "wet",
+        "type": "notify",
+        "unit": "",
+        "range": [
+          0,
+          1
+        ]
+      }
+    ],
+    "defaults": {
+      "poll_interval_ms": 1000
+    }
+  },
+  "motion_sensor_pir": {
+    "protocol_version": "hdp-1",
+    "vendor_id": "hak-v2",
+    "product_id": "pir-m",
+    "device_class": "smart_home",
+    "serial_number": "SN-MOTION_SENSOR_PIR-0001",
+    "capabilities": [
+      {
+        "name": "motion",
+        "type": "notify",
+        "unit": "",
+        "range": [
+          0,
+          1
+        ]
+      },
+      {
+        "name": "lux",
+        "type": "read",
+        "unit": "lux",
+        "range": [
+          0,
+          10000
+        ]
+      }
+    ],
+    "defaults": {
+      "poll_interval_ms": 1000
+    }
+  },
+  "smart_plug": {
+    "protocol_version": "hdp-1",
+    "vendor_id": "hak-v2",
+    "product_id": "plug-z",
+    "device_class": "smart_home",
+    "serial_number": "SN-SMART_PLUG-0001",
+    "capabilities": [
+      {
+        "name": "on",
+        "type": "rw",
+        "unit": "",
+        "range": [
+          0,
+          1
+        ]
+      },
+      {
+        "name": "power",
+        "type": "read",
+        "unit": "W",
+        "range": [
+          0,
+          2500
+        ]
+      }
+    ],
+    "defaults": {
+      "poll_interval_ms": 1000
+    }
+  },
+  "air_purifier": {
+    "protocol_version": "hdp-1",
+    "vendor_id": "hak-v2",
+    "product_id": "purif-a",
+    "device_class": "smart_home",
+    "serial_number": "SN-AIR_PURIFIER-0001",
+    "capabilities": [
+      {
+        "name": "fan_speed",
+        "type": "rw",
+        "unit": "",
+        "range": [
+          0,
+          4
+        ]
+      },
+      {
+        "name": "pm25",
+        "type": "read",
+        "unit": "μg/m³",
+        "range": [
+          0,
+          500
+        ]
+      },
+      {
+        "name": "filter_life",
+        "type": "read",
+        "unit": "%",
+        "range": [
+          0,
+          100
+        ]
+      }
+    ],
+    "defaults": {
+      "poll_interval_ms": 1000
+    }
+  },
+  "robot_vacuum": {
+    "protocol_version": "hdp-1",
+    "vendor_id": "hak-v2",
+    "product_id": "vac-rb",
+    "device_class": "smart_home",
+    "serial_number": "SN-ROBOT_VACUUM-0001",
+    "capabilities": [
+      {
+        "name": "start",
+        "type": "exec",
+        "unit": "",
+        "range": []
+      },
+      {
+        "name": "dock",
+        "type": "exec",
+        "unit": "",
+        "range": []
+      },
+      {
+        "name": "battery",
+        "type": "read",
+        "unit": "%",
+        "range": [
+          0,
+          100
+        ]
+      },
+      {
+        "name": "mode",
+        "type": "rw",
+        "unit": "",
+        "range": [
+          0,
+          5
+        ]
+      }
+    ],
+    "defaults": {
+      "poll_interval_ms": 1000
+    }
+  },
+  "smart_speaker": {
+    "protocol_version": "hdp-1",
+    "vendor_id": "hak-v2",
+    "product_id": "spk-zw",
+    "device_class": "smart_home",
+    "serial_number": "SN-SMART_SPEAKER-0001",
+    "capabilities": [
+      {
+        "name": "volume",
+        "type": "rw",
+        "unit": "",
+        "range": [
+          0,
+          100
+        ]
+      },
+      {
+        "name": "speak",
+        "type": "exec",
+        "unit": "",
+        "range": []
+      },
+      {
+        "name": "listen",
+        "type": "notify",
+        "unit": "",
+        "range": [
+          0,
+          1
+        ]
+      }
+    ],
+    "defaults": {
+      "poll_interval_ms": 1000
+    }
+  },
+  "cnc_controller": {
+    "protocol_version": "hdp-1",
+    "vendor_id": "hak-v2",
+    "product_id": "cnc-grbl",
+    "device_class": "industrial",
+    "serial_number": "SN-CNC_CONTROLLER-0001",
+    "capabilities": [
+      {
+        "name": "x_pos",
+        "type": "rw",
+        "unit": "mm",
+        "range": [
+          -500,
+          500
+        ]
+      },
+      {
+        "name": "y_pos",
+        "type": "rw",
+        "unit": "mm",
+        "range": [
+          -400,
+          400
+        ]
+      },
+      {
+        "name": "z_pos",
+        "type": "rw",
+        "unit": "mm",
+        "range": [
+          -100,
+          100
+        ]
+      },
+      {
+        "name": "spindle",
+        "type": "rw",
+        "unit": "rpm",
+        "range": [
+          0,
+          24000
+        ]
+      }
+    ],
+    "defaults": {
+      "poll_interval_ms": 1000
+    }
+  },
+  "3d_printer_fdm": {
+    "protocol_version": "hdp-1",
+    "vendor_id": "hak-v2",
+    "product_id": "printer-k",
+    "device_class": "industrial",
+    "serial_number": "SN-3D_PRINTER_FDM-0001",
+    "capabilities": [
+      {
+        "name": "extruder_temp",
+        "type": "rw",
+        "unit": "°C",
+        "range": [
+          0,
+          260
+        ]
+      },
+      {
+        "name": "bed_temp",
+        "type": "rw",
+        "unit": "°C",
+        "range": [
+          0,
+          110
+        ]
+      },
+      {
+        "name": "progress",
+        "type": "read",
+        "unit": "%",
+        "range": [
+          0,
+          100
+        ]
+      },
+      {
+        "name": "pos",
+        "type": "read",
+        "unit": "mm",
+        "range": [
+          0,
+          300
+        ]
+      }
+    ],
+    "defaults": {
+      "poll_interval_ms": 1000
+    }
+  },
+  "plc_siemens_s7": {
+    "protocol_version": "hdp-1",
+    "vendor_id": "hak-v2",
+    "product_id": "plc-s7",
+    "device_class": "industrial",
+    "serial_number": "SN-PLC_SIEMENS_S7-0001",
+    "capabilities": [
+      {
+        "name": "inputs",
+        "type": "read",
+        "unit": "",
+        "range": [
+          0,
+          65535
+        ]
+      },
+      {
+        "name": "outputs",
+        "type": "rw",
+        "unit": "",
+        "range": [
+          0,
+          65535
+        ]
+      },
+      {
+        "name": "db_block",
+        "type": "rw",
+        "unit": "bytes",
+        "range": [
+          0,
+          0
+        ]
+      }
+    ],
+    "defaults": {
+      "poll_interval_ms": 1000
+    }
+  },
+  "conveyor_belt": {
+    "protocol_version": "hdp-1",
+    "vendor_id": "hak-v2",
+    "product_id": "conv-b",
+    "device_class": "industrial",
+    "serial_number": "SN-CONVEYOR_BELT-0001",
+    "capabilities": [
+      {
+        "name": "speed",
+        "type": "rw",
+        "unit": "m/s",
+        "range": [
+          0,
+          2.0
+        ]
+      },
+      {
+        "name": "running",
+        "type": "rw",
+        "unit": "",
+        "range": [
+          0,
+          1
+        ]
+      },
+      {
+        "name": "tension",
+        "type": "read",
+        "unit": "N",
+        "range": [
+          0,
+          1000
+        ]
+      }
+    ],
+    "defaults": {
+      "poll_interval_ms": 1000
+    }
+  },
+  "servo_pack": {
+    "protocol_version": "hdp-1",
+    "vendor_id": "hak-v2",
+    "product_id": "servo-p",
+    "device_class": "industrial",
+    "serial_number": "SN-SERVO_PACK-0001",
+    "capabilities": [
+      {
+        "name": "position",
+        "type": "rw",
+        "unit": "pulse",
+        "range": [
+          0,
+          10000
+        ]
+      },
+      {
+        "name": "velocity",
+        "type": "rw",
+        "unit": "rpm",
+        "range": [
+          -5000,
+          5000
+        ]
+      },
+      {
+        "name": "torque",
+        "type": "read",
+        "unit": "Nm",
+        "range": [
+          0,
+          100
+        ]
+      }
+    ],
+    "defaults": {
+      "poll_interval_ms": 1000
+    }
+  },
+  "variable_frequency_drive": {
+    "protocol_version": "hdp-1",
+    "vendor_id": "hak-v2",
+    "product_id": "vfd-1",
+    "device_class": "industrial",
+    "serial_number": "SN-VARIABLE_FREQUENCY_DRIVE-0001",
+    "capabilities": [
+      {
+        "name": "frequency",
+        "type": "rw",
+        "unit": "Hz",
+        "range": [
+          0,
+          400
+        ]
+      },
+      {
+        "name": "current",
+        "type": "read",
+        "unit": "A",
+        "range": [
+          0,
+          50
+        ]
+      },
+      {
+        "name": "voltage",
+        "type": "read",
+        "unit": "V",
+        "range": [
+          0,
+          480
+        ]
+      }
+    ],
+    "defaults": {
+      "poll_interval_ms": 1000
+    }
+  },
+  "hmi_touchscreen": {
+    "protocol_version": "hdp-1",
+    "vendor_id": "hak-v2",
+    "product_id": "hmi-t",
+    "device_class": "industrial",
+    "serial_number": "SN-HMI_TOUCHSCREEN-0001",
+    "capabilities": [
+      {
+        "name": "screen",
+        "type": "write",
+        "unit": "bytes",
+        "range": [
+          0,
+          0
+        ]
+      },
+      {
+        "name": "touch",
+        "type": "notify",
+        "unit": "pixel",
+        "range": [
+          0,
+          0
+        ]
+      },
+      {
+        "name": "alarm",
+        "type": "notify",
+        "unit": "",
+        "range": [
+          0,
+          1
+        ]
+      }
+    ],
+    "defaults": {
+      "poll_interval_ms": 1000
+    }
+  },
+  "barcode_scanner": {
+    "protocol_version": "hdp-1",
+    "vendor_id": "hak-v2",
+    "product_id": "bc-scan",
+    "device_class": "industrial",
+    "serial_number": "SN-BARCODE_SCANNER-0001",
+    "capabilities": [
+      {
+        "name": "scan",
+        "type": "notify",
+        "unit": "",
+        "range": [
+          0,
+          1
+        ]
+      },
+      {
+        "name": "data",
+        "type": "read",
+        "unit": "",
+        "range": [
+          0,
+          0
+        ]
+      }
+    ],
+    "defaults": {
+      "poll_interval_ms": 1000
+    }
+  },
+  "weight_scale": {
+    "protocol_version": "hdp-1",
+    "vendor_id": "hak-v2",
+    "product_id": "scale-i",
+    "device_class": "industrial",
+    "serial_number": "SN-WEIGHT_SCALE-0001",
+    "capabilities": [
+      {
+        "name": "weight",
+        "type": "read",
+        "unit": "kg",
+        "range": [
+          -10,
+          10000
+        ]
+      },
+      {
+        "name": "stable",
+        "type": "notify",
+        "unit": "",
+        "range": [
+          0,
+          1
+        ]
+      }
+    ],
+    "defaults": {
+      "poll_interval_ms": 1000
+    }
+  },
+  "industrial_robot_6axis": {
+    "protocol_version": "hdp-1",
+    "vendor_id": "hak-v2",
+    "product_id": "ir-6axis",
+    "device_class": "industrial",
+    "serial_number": "SN-INDUSTRIAL_ROBOT_6AXIS-0001",
+    "capabilities": [
+      {
+        "name": "j1-j6",
+        "type": "rw",
+        "unit": "°",
+        "range": [
+          -360,
+          360
+        ]
+      },
+      {
+        "name": "speed",
+        "type": "rw",
+        "unit": "%",
+        "range": [
+          0,
+          100
+        ]
+      },
+      {
+        "name": "payload",
+        "type": "read",
+        "unit": "kg",
+        "range": [
+          0,
+          50
+        ]
+      }
+    ],
+    "defaults": {
+      "poll_interval_ms": 1000
+    }
+  },
+  "ecg_monitor": {
+    "protocol_version": "hdp-1",
+    "vendor_id": "hak-v2",
+    "product_id": "ecg-12",
+    "device_class": "medical",
+    "serial_number": "SN-ECG_MONITOR-0001",
+    "capabilities": [
+      {
+        "name": "ecg_lead_i",
+        "type": "notify",
+        "unit": "mV",
+        "range": [
+          -5,
+          5
+        ]
+      },
+      {
+        "name": "heart_rate",
+        "type": "read",
+        "unit": "bpm",
+        "range": [
+          30,
+          250
+        ]
+      },
+      {
+        "name": "arrhythmia",
+        "type": "notify",
+        "unit": "",
+        "range": [
+          0,
+          1
+        ]
+      }
+    ],
+    "defaults": {
+      "poll_interval_ms": 1000
+    }
+  },
+  "blood_pressure_cuff": {
+    "protocol_version": "hdp-1",
+    "vendor_id": "hak-v2",
+    "product_id": "bp-cuff",
+    "device_class": "medical",
+    "serial_number": "SN-BLOOD_PRESSURE_CUFF-0001",
+    "capabilities": [
+      {
+        "name": "systolic",
+        "type": "read",
+        "unit": "mmHg",
+        "range": [
+          60,
+          250
+        ]
+      },
+      {
+        "name": "diastolic",
+        "type": "read",
+        "unit": "mmHg",
+        "range": [
+          40,
+          150
+        ]
+      },
+      {
+        "name": "pulse",
+        "type": "read",
+        "unit": "bpm",
+        "range": [
+          40,
+          200
+        ]
+      }
+    ],
+    "defaults": {
+      "poll_interval_ms": 1000
+    }
+  },
+  "infusion_pump": {
+    "protocol_version": "hdp-1",
+    "vendor_id": "hak-v2",
+    "product_id": "inf-1",
+    "device_class": "medical",
+    "serial_number": "SN-INFUSION_PUMP-0001",
+    "capabilities": [
+      {
+        "name": "flow_rate",
+        "type": "rw",
+        "unit": "mL/h",
+        "range": [
+          0,
+          2000
+        ]
+      },
+      {
+        "name": "volume_infused",
+        "type": "read",
+        "unit": "mL",
+        "range": [
+          0,
+          9999
+        ]
+      },
+      {
+        "name": "alarm",
+        "type": "notify",
+        "unit": "",
+        "range": [
+          0,
+          1
+        ]
+      }
+    ],
+    "defaults": {
+      "poll_interval_ms": 1000
+    }
+  },
+  "patient_monitor_multi": {
+    "protocol_version": "hdp-1",
+    "vendor_id": "hak-v2",
+    "product_id": "pmon-1",
+    "device_class": "medical",
+    "serial_number": "SN-PATIENT_MONITOR_MULTI-0001",
+    "capabilities": [
+      {
+        "name": "ecg",
+        "type": "notify",
+        "unit": "mV",
+        "range": [
+          -5,
+          5
+        ]
+      },
+      {
+        "name": "spo2",
+        "type": "read",
+        "unit": "%",
+        "range": [
+          0,
+          100
+        ]
+      },
+      {
+        "name": "nibp",
+        "type": "exec",
+        "unit": "",
+        "range": []
+      },
+      {
+        "name": "temp",
+        "type": "read",
+        "unit": "°C",
+        "range": [
+          32,
+          42
+        ]
+      }
+    ],
+    "defaults": {
+      "poll_interval_ms": 1000
+    }
+  },
+  "ventilator": {
+    "protocol_version": "hdp-1",
+    "vendor_id": "hak-v2",
+    "product_id": "vent-1",
+    "device_class": "medical",
+    "serial_number": "SN-VENTILATOR-0001",
+    "capabilities": [
+      {
+        "name": "tidal_volume",
+        "type": "rw",
+        "unit": "mL",
+        "range": [
+          200,
+          1000
+        ]
+      },
+      {
+        "name": "resp_rate",
+        "type": "rw",
+        "unit": "bpm",
+        "range": [
+          0,
+          60
+        ]
+      },
+      {
+        "name": "peep",
+        "type": "rw",
+        "unit": "cmH2O",
+        "range": [
+          0,
+          20
+        ]
+      }
+    ],
+    "defaults": {
+      "poll_interval_ms": 1000
+    }
+  },
+  "defibrillator": {
+    "protocol_version": "hdp-1",
+    "vendor_id": "hak-v2",
+    "product_id": "defib-1",
+    "device_class": "medical",
+    "serial_number": "SN-DEFIBRILLATOR-0001",
+    "capabilities": [
+      {
+        "name": "energy",
+        "type": "rw",
+        "unit": "J",
+        "range": [
+          0,
+          360
+        ]
+      },
+      {
+        "name": "charge",
+        "type": "exec",
+        "unit": "",
+        "range": []
+      },
+      {
+        "name": "shock",
+        "type": "exec",
+        "unit": "",
+        "range": []
+      }
+    ],
+    "defaults": {
+      "poll_interval_ms": 1000
+    }
+  },
+  "wheelchair_medical": {
+    "protocol_version": "hdp-1",
+    "vendor_id": "hak-v2",
+    "product_id": "wheel-med",
+    "device_class": "medical",
+    "serial_number": "SN-WHEELCHAIR_MEDICAL-0001",
+    "capabilities": [
+      {
+        "name": "speed",
+        "type": "rw",
+        "unit": "m/s",
+        "range": [
+          0,
+          2
+        ]
+      },
+      {
+        "name": "tilt",
+        "type": "rw",
+        "unit": "°",
+        "range": [
+          0,
+          45
+        ]
+      },
+      {
+        "name": "recline",
+        "type": "rw",
+        "unit": "°",
+        "range": [
+          0,
+          75
+        ]
+      }
+    ],
+    "defaults": {
+      "poll_interval_ms": 1000
+    }
+  },
+  "wifi_gateway": {
+    "protocol_version": "hdp-1",
+    "vendor_id": "hak-v2",
+    "product_id": "wifi-gw",
+    "device_class": "gateway",
+    "serial_number": "SN-WIFI_GATEWAY-0001",
+    "capabilities": [
+      {
+        "name": "ssid",
+        "type": "rw",
+        "unit": "",
+        "range": [
+          0,
+          0
+        ]
+      },
+      {
+        "name": "clients",
+        "type": "read",
+        "unit": "",
+        "range": [
+          0,
+          254
+        ]
+      },
+      {
+        "name": "rx_bytes",
+        "type": "read",
+        "unit": "bytes",
+        "range": [
+          0,
+          0
+        ]
+      },
+      {
+        "name": "tx_bytes",
+        "type": "read",
+        "unit": "bytes",
+        "range": [
+          0,
+          0
+        ]
+      }
+    ],
+    "defaults": {
+      "poll_interval_ms": 1000
+    }
+  },
+  "zigbee_coordinator": {
+    "protocol_version": "hdp-1",
+    "vendor_id": "hak-v2",
+    "product_id": "zb-coord",
+    "device_class": "gateway",
+    "serial_number": "SN-ZIGBEE_COORDINATOR-0001",
+    "capabilities": [
+      {
+        "name": "devices",
+        "type": "read",
+        "unit": "",
+        "range": [
+          0,
+          254
+        ]
+      },
+      {
+        "name": "join",
+        "type": "exec",
+        "unit": "",
+        "range": []
+      },
+      {
+        "name": "leave",
+        "type": "exec",
+        "unit": "",
+        "range": []
+      }
+    ],
+    "defaults": {
+      "poll_interval_ms": 1000
+    }
+  },
+  "canbus_bridge": {
+    "protocol_version": "hdp-1",
+    "vendor_id": "hak-v2",
+    "product_id": "can-bridge",
+    "device_class": "gateway",
+    "serial_number": "SN-CANBUS_BRIDGE-0001",
+    "capabilities": [
+      {
+        "name": "bus_speed",
+        "type": "rw",
+        "unit": "kbps",
+        "range": [
+          50,
+          1000
+        ]
+      },
+      {
+        "name": "frame",
+        "type": "notify",
+        "unit": "bytes",
+        "range": [
+          0,
+          0
+        ]
+      },
+      {
+        "name": "send",
+        "type": "write",
+        "unit": "bytes",
+        "range": [
+          0,
+          0
+        ]
+      }
+    ],
+    "defaults": {
+      "poll_interval_ms": 1000
+    }
+  },
+  "serial_server": {
+    "protocol_version": "hdp-1",
+    "vendor_id": "hak-v2",
+    "product_id": "ser-srv",
+    "device_class": "gateway",
+    "serial_number": "SN-SERIAL_SERVER-0001",
+    "capabilities": [
+      {
+        "name": "baudrate",
+        "type": "rw",
+        "unit": "",
+        "range": [
+          1200,
+          921600
+        ]
+      },
+      {
+        "name": "data",
+        "type": "notify",
+        "unit": "bytes",
+        "range": [
+          0,
+          0
+        ]
+      }
+    ],
+    "defaults": {
+      "poll_interval_ms": 1000
+    }
+  },
+  "ethernet_switch_8port": {
+    "protocol_version": "hdp-1",
+    "vendor_id": "hak-v2",
+    "product_id": "eth-sw",
+    "device_class": "gateway",
+    "serial_number": "SN-ETHERNET_SWITCH_8PORT-0001",
+    "capabilities": [
+      {
+        "name": "port_status",
+        "type": "read",
+        "unit": "",
+        "range": [
+          0,
+          255
+        ]
+      },
+      {
+        "name": "port_speed",
+        "type": "read",
+        "unit": "Mbps",
+        "range": [
+          0,
+          1000
+        ]
+      }
+    ],
+    "defaults": {
+      "poll_interval_ms": 1000
+    }
+  },
+  "usb_hub_controller": {
+    "protocol_version": "hdp-1",
+    "vendor_id": "hak-v2",
+    "product_id": "usb-hub",
+    "device_class": "gateway",
+    "serial_number": "SN-USB_HUB_CONTROLLER-0001",
+    "capabilities": [
+      {
+        "name": "port_count",
+        "type": "read",
+        "unit": "",
+        "range": [
+          0,
+          15
+        ]
+      },
+      {
+        "name": "overcurrent",
+        "type": "notify",
+        "unit": "",
+        "range": [
+          0,
+          1
+        ]
+      }
+    ],
+    "defaults": {
+      "poll_interval_ms": 1000
+    }
+  },
+  "solar_inverter": {
+    "protocol_version": "hdp-1",
+    "vendor_id": "hak-v2",
+    "product_id": "solar-inv",
+    "device_class": "energy",
+    "serial_number": "SN-SOLAR_INVERTER-0001",
+    "capabilities": [
+      {
+        "name": "pv_power",
+        "type": "read",
+        "unit": "W",
+        "range": [
+          0,
+          10000
+        ]
+      },
+      {
+        "name": "grid_power",
+        "type": "read",
+        "unit": "W",
+        "range": [
+          -10000,
+          10000
+        ]
+      },
+      {
+        "name": "efficiency",
+        "type": "read",
+        "unit": "%",
+        "range": [
+          0,
+          100
+        ]
+      }
+    ],
+    "defaults": {
+      "poll_interval_ms": 1000
+    }
+  },
+  "battery_management": {
+    "protocol_version": "hdp-1",
+    "vendor_id": "hak-v2",
+    "product_id": "bms-48v",
+    "device_class": "energy",
+    "serial_number": "SN-BATTERY_MANAGEMENT-0001",
+    "capabilities": [
+      {
+        "name": "voltage",
+        "type": "read",
+        "unit": "V",
+        "range": [
+          0,
+          60
+        ]
+      },
+      {
+        "name": "current",
+        "type": "read",
+        "unit": "A",
+        "range": [
+          -100,
+          100
+        ]
+      },
+      {
+        "name": "soc",
+        "type": "read",
+        "unit": "%",
+        "range": [
+          0,
+          100
+        ]
+      },
+      {
+        "name": "cell_voltages",
+        "type": "read",
+        "unit": "V",
+        "range": [
+          0,
+          5
+        ]
+      }
+    ],
+    "defaults": {
+      "poll_interval_ms": 1000
+    }
+  },
+  "ev_charger_l2": {
+    "protocol_version": "hdp-1",
+    "vendor_id": "hak-v2",
+    "product_id": "ev-l2",
+    "device_class": "energy",
+    "serial_number": "SN-EV_CHARGER_L2-0001",
+    "capabilities": [
+      {
+        "name": "charging",
+        "type": "notify",
+        "unit": "",
+        "range": [
+          0,
+          1
+        ]
+      },
+      {
+        "name": "current",
+        "type": "rw",
+        "unit": "A",
+        "range": [
+          0,
+          32
+        ]
+      },
+      {
+        "name": "energy_delivered",
+        "type": "read",
+        "unit": "kWh",
+        "range": [
+          0,
+          999
+        ]
+      },
+      {
+        "name": "vehicle_soc",
+        "type": "read",
+        "unit": "%",
+        "range": [
+          0,
+          100
+        ]
+      }
+    ],
+    "defaults": {
+      "poll_interval_ms": 1000
+    }
+  },
+  "grid_monitor": {
+    "protocol_version": "hdp-1",
+    "vendor_id": "hak-v2",
+    "product_id": "grid-m",
+    "device_class": "energy",
+    "serial_number": "SN-GRID_MONITOR-0001",
+    "capabilities": [
+      {
+        "name": "voltage",
+        "type": "read",
+        "unit": "V",
+        "range": [
+          0,
+          240
+        ]
+      },
+      {
+        "name": "frequency",
+        "type": "read",
+        "unit": "Hz",
+        "range": [
+          49,
+          51
+        ]
+      },
+      {
+        "name": "power_factor",
+        "type": "read",
+        "unit": "",
+        "range": [
+          -1,
+          1
+        ]
+      }
+    ],
+    "defaults": {
+      "poll_interval_ms": 1000
+    }
+  },
+  "diesel_generator": {
+    "protocol_version": "hdp-1",
+    "vendor_id": "hak-v2",
+    "product_id": "gen-d6",
+    "device_class": "energy",
+    "serial_number": "SN-DIESEL_GENERATOR-0001",
+    "capabilities": [
+      {
+        "name": "running",
+        "type": "notify",
+        "unit": "",
+        "range": [
+          0,
+          1
+        ]
+      },
+      {
+        "name": "fuel_level",
+        "type": "read",
+        "unit": "%",
+        "range": [
+          0,
+          100
+        ]
+      },
+      {
+        "name": "output_power",
+        "type": "read",
+        "unit": "kW",
+        "range": [
+          0,
+          50
+        ]
+      },
+      {
+        "name": "hours",
+        "type": "read",
+        "unit": "h",
+        "range": [
+          0,
+          9999
+        ]
+      }
+    ],
+    "defaults": {
+      "poll_interval_ms": 1000
+    }
+  },
+  "wind_turbine_controller": {
+    "protocol_version": "hdp-1",
+    "vendor_id": "hak-v2",
+    "product_id": "wind-ctl",
+    "device_class": "energy",
+    "serial_number": "SN-WIND_TURBINE_CONTROLLER-0001",
+    "capabilities": [
+      {
+        "name": "wind_speed",
+        "type": "read",
+        "unit": "m/s",
+        "range": [
+          0,
+          40
+        ]
+      },
+      {
+        "name": "rotor_speed",
+        "type": "read",
+        "unit": "rpm",
+        "range": [
+          0,
+          2000
+        ]
+      },
+      {
+        "name": "power",
+        "type": "read",
+        "unit": "kW",
+        "range": [
+          0,
+          10
+        ]
+      }
+    ],
+    "defaults": {
+      "poll_interval_ms": 1000
+    }
+  },
+  "car_ecu_obd": {
+    "protocol_version": "hdp-1",
+    "vendor_id": "hak-v2",
+    "product_id": "obd-ii",
+    "device_class": "vehicle",
+    "serial_number": "SN-CAR_ECU_OBD-0001",
+    "capabilities": [
+      {
+        "name": "rpm",
+        "type": "read",
+        "unit": "rpm",
+        "range": [
+          0,
+          8000
+        ]
+      },
+      {
+        "name": "speed",
+        "type": "read",
+        "unit": "km/h",
+        "range": [
+          0,
+          250
+        ]
+      },
+      {
+        "name": "throttle",
+        "type": "read",
+        "unit": "%",
+        "range": [
+          0,
+          100
+        ]
+      },
+      {
+        "name": "coolant_temp",
+        "type": "read",
+        "unit": "°C",
+        "range": [
+          -40,
+          150
+        ]
+      },
+      {
+        "name": "dtc",
+        "type": "read",
+        "unit": "",
+        "range": [
+          0,
+          0
+        ]
+      }
+    ],
+    "defaults": {
+      "poll_interval_ms": 1000
+    }
+  },
+  "car_canbus_adapter": {
+    "protocol_version": "hdp-1",
+    "vendor_id": "hak-v2",
+    "product_id": "can-car",
+    "device_class": "vehicle",
+    "serial_number": "SN-CAR_CANBUS_ADAPTER-0001",
+    "capabilities": [
+      {
+        "name": "frame",
+        "type": "notify",
+        "unit": "bytes",
+        "range": [
+          0,
+          0
+        ]
+      },
+      {
+        "name": "send",
+        "type": "write",
+        "unit": "bytes",
+        "range": [
+          0,
+          0
+        ]
+      }
+    ],
+    "defaults": {
+      "poll_interval_ms": 1000
+    }
+  },
+  "ev_battery_pack": {
+    "protocol_version": "hdp-1",
+    "vendor_id": "hak-v2",
+    "product_id": "ev-pack",
+    "device_class": "vehicle",
+    "serial_number": "SN-EV_BATTERY_PACK-0001",
+    "capabilities": [
+      {
+        "name": "pack_voltage",
+        "type": "read",
+        "unit": "V",
+        "range": [
+          200,
+          800
+        ]
+      },
+      {
+        "name": "pack_current",
+        "type": "read",
+        "unit": "A",
+        "range": [
+          -300,
+          300
+        ]
+      },
+      {
+        "name": "cell_soc",
+        "type": "read",
+        "unit": "%",
+        "range": [
+          0,
+          100
+        ]
+      },
+      {
+        "name": "cell_temp_max",
+        "type": "read",
+        "unit": "°C",
+        "range": [
+          0,
+          60
+        ]
+      }
+    ],
+    "defaults": {
+      "poll_interval_ms": 1000
+    }
+  },
+  "ev_motor_controller": {
+    "protocol_version": "hdp-1",
+    "vendor_id": "hak-v2",
+    "product_id": "ev-motor",
+    "device_class": "vehicle",
+    "serial_number": "SN-EV_MOTOR_CONTROLLER-0001",
+    "capabilities": [
+      {
+        "name": "torque",
+        "type": "rw",
+        "unit": "Nm",
+        "range": [
+          -300,
+          300
+        ]
+      },
+      {
+        "name": "rpm",
+        "type": "read",
+        "unit": "rpm",
+        "range": [
+          0,
+          15000
+        ]
+      },
+      {
+        "name": "power",
+        "type": "read",
+        "unit": "kW",
+        "range": [
+          0,
+          250
+        ]
+      }
+    ],
+    "defaults": {
+      "poll_interval_ms": 1000
+    }
+  },
+  "dashboard_cluster": {
+    "protocol_version": "hdp-1",
+    "vendor_id": "hak-v2",
+    "product_id": "dash-clust",
+    "device_class": "vehicle",
+    "serial_number": "SN-DASHBOARD_CLUSTER-0001",
+    "capabilities": [
+      {
+        "name": "speed_display",
+        "type": "write",
+        "unit": "km/h",
+        "range": [
+          0,
+          250
+        ]
+      },
+      {
+        "name": "rpm_display",
+        "type": "write",
+        "unit": "rpm",
+        "range": [
+          0,
+          8000
+        ]
+      },
+      {
+        "name": "warning",
+        "type": "notify",
+        "unit": "",
+        "range": [
+          0,
+          1
+        ]
+      }
+    ],
+    "defaults": {
+      "poll_interval_ms": 1000
+    }
+  },
+  "gps_vehicle_tracker": {
+    "protocol_version": "hdp-1",
+    "vendor_id": "hak-v2",
+    "product_id": "gps-veh",
+    "device_class": "vehicle",
+    "serial_number": "SN-GPS_VEHICLE_TRACKER-0001",
+    "capabilities": [
+      {
+        "name": "lat",
+        "type": "read",
+        "unit": "°",
+        "range": [
+          -90,
+          90
+        ]
+      },
+      {
+        "name": "lon",
+        "type": "read",
+        "unit": "°",
+        "range": [
+          -180,
+          180
+        ]
+      },
+      {
+        "name": "speed",
+        "type": "read",
+        "unit": "km/h",
+        "range": [
+          0,
+          250
+        ]
+      },
+      {
+        "name": "heading",
+        "type": "read",
+        "unit": "°",
+        "range": [
+          0,
+          360
+        ]
+      }
+    ],
+    "defaults": {
+      "poll_interval_ms": 1000
+    }
+  },
+  "adas_camera": {
+    "protocol_version": "hdp-1",
+    "vendor_id": "hak-v2",
+    "product_id": "adas-cam",
+    "device_class": "vehicle",
+    "serial_number": "SN-ADAS_CAMERA-0001",
+    "capabilities": [
+      {
+        "name": "lane_detect",
+        "type": "notify",
+        "unit": "",
+        "range": [
+          0,
+          1
+        ]
+      },
+      {
+        "name": "pedestrian",
+        "type": "notify",
+        "unit": "",
+        "range": [
+          0,
+          1
+        ]
+      },
+      {
+        "name": "warning",
+        "type": "notify",
+        "unit": "",
+        "range": [
+          0,
+          1
+        ]
+      }
+    ],
+    "defaults": {
+      "poll_interval_ms": 1000
+    }
+  },
+  "vehicle_lidar": {
+    "protocol_version": "hdp-1",
+    "vendor_id": "hak-v2",
+    "product_id": "lidar-v",
+    "device_class": "vehicle",
+    "serial_number": "SN-VEHICLE_LIDAR-0001",
+    "capabilities": [
+      {
+        "name": "point_cloud",
+        "type": "notify",
+        "unit": "bytes",
+        "range": [
+          0,
+          0
+        ]
+      },
+      {
+        "name": "objects",
+        "type": "notify",
+        "unit": "",
+        "range": [
+          0,
+          0
+        ]
+      }
+    ],
+    "defaults": {
+      "poll_interval_ms": 1000
+    }
+  },
+  "vehicle_ultrasonic_6ch": {
+    "protocol_version": "hdp-1",
+    "vendor_id": "hak-v2",
+    "product_id": "us-6ch",
+    "device_class": "vehicle",
+    "serial_number": "SN-VEHICLE_ULTRASONIC_6CH-0001",
+    "capabilities": [
+      {
+        "name": "distances",
+        "type": "read",
+        "unit": "m",
+        "range": [
+          0.2,
+          4.0
+        ]
+      }
+    ],
+    "defaults": {
+      "poll_interval_ms": 1000
+    }
+  },
+  "airbag_sensor_cluster": {
+    "protocol_version": "hdp-1",
+    "vendor_id": "hak-v2",
+    "product_id": "airbag",
+    "device_class": "vehicle",
+    "serial_number": "SN-AIRBAG_SENSOR_CLUSTER-0001",
+    "capabilities": [
+      {
+        "name": "impact",
+        "type": "notify",
+        "unit": "g",
+        "range": [
+          0,
+          100
+        ]
+      },
+      {
+        "name": "status",
+        "type": "read",
+        "unit": "",
+        "range": [
+          0,
+          1
+        ]
+      }
+    ],
+    "defaults": {
+      "poll_interval_ms": 1000
+    }
+  },
+  "tpms_sensor": {
+    "protocol_version": "hdp-1",
+    "vendor_id": "hak-v2",
+    "product_id": "tpms",
+    "device_class": "vehicle",
+    "serial_number": "SN-TPMS_SENSOR-0001",
+    "capabilities": [
+      {
+        "name": "tire_fl",
+        "type": "read",
+        "unit": "bar",
+        "range": [
+          0,
+          4
+        ]
+      },
+      {
+        "name": "tire_fr",
+        "type": "read",
+        "unit": "bar",
+        "range": [
+          0,
+          4
+        ]
+      },
+      {
+        "name": "tire_rl",
+        "type": "read",
+        "unit": "bar",
+        "range": [
+          0,
+          4
+        ]
+      },
+      {
+        "name": "tire_rr",
+        "type": "read",
+        "unit": "bar",
+        "range": [
+          0,
+          4
+        ]
+      },
+      {
+        "name": "tire_temp",
+        "type": "read",
+        "unit": "°C",
+        "range": [
+          0,
+          100
+        ]
+      }
+    ],
+    "defaults": {
+      "poll_interval_ms": 1000
+    }
+  },
+  "headlight_controller": {
+    "protocol_version": "hdp-1",
+    "vendor_id": "hak-v2",
+    "product_id": "hl-ctrl",
+    "device_class": "vehicle",
+    "serial_number": "SN-HEADLIGHT_CONTROLLER-0001",
+    "capabilities": [
+      {
+        "name": "low_beam",
+        "type": "rw",
+        "unit": "",
+        "range": [
+          0,
+          1
+        ]
+      },
+      {
+        "name": "high_beam",
+        "type": "rw",
+        "unit": "",
+        "range": [
+          0,
+          1
+        ]
+      },
+      {
+        "name": "indicator",
+        "type": "rw",
+        "unit": "",
+        "range": [
+          0,
+          3
+        ]
+      }
+    ],
+    "defaults": {
+      "poll_interval_ms": 1000
+    }
+  }
+}
