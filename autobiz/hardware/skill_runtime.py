@@ -70,30 +70,42 @@ class SkillRuntime:
     # ---- 高层执行 API ----
 
     def read(self, cap_name: str) -> Any:
-        """读一个 capability, 返回值 (按 unit 自动转换)."""
+        """读一个 capability, 返回值 (按 unit 自动转换).
+
+        能力不存在 / transport 超时 → 返回 None (不抛异常).
+        """
         with self._lock:
             self.transport.write(f"READ {cap_name}")
-            resp = self.transport.read_line(timeout=5.0)
+            try:
+                resp = self.transport.read_line(timeout=5.0)
+            except Exception:
+                return None
             if resp is None:
-                raise TimeoutError(f"{self.name} READ {cap_name} timeout")
+                return None
             if resp.startswith("ERR"):
-                raise RuntimeError(resp)
+                return None
             cap = next((c for c in self.capabilities
                         if c["name"].lower() == cap_name.lower()), None)
             return self._parse_resp(resp, cap)
 
     def write(self, cap_name: str, value: Any) -> bool:
-        """写一个 capability."""
+        """写一个 capability. 能力不存在 / transport 失败 → False."""
         with self._lock:
             self.transport.write(f"WRITE {cap_name} {value}")
-            resp = self.transport.read_line(timeout=5.0)
+            try:
+                resp = self.transport.read_line(timeout=5.0)
+            except Exception:
+                return False
             return resp == "OK"
 
     def execute(self, cmd_name: str) -> bool:
-        """执行一个 exec capability (无参数)."""
+        """执行一个 exec capability (无参数). 能力不存在 → False."""
         with self._lock:
             self.transport.write(f"EXEC {cmd_name}")
-            resp = self.transport.read_line(timeout=5.0)
+            try:
+                resp = self.transport.read_line(timeout=5.0)
+            except Exception:
+                return False
             return resp == "OK"
 
     # ---- 时间序列模拟 ----
