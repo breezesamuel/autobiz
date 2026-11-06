@@ -42,9 +42,9 @@ def validate_command(descriptor: dict[str, Any],
                 if value < lo or value > hi:
                     raise SandboxError(
                         f"'{command}' value {value} out of range [{lo}, {hi}]")
-                # 整数范围却给了 float（除 intensity 外）
-                if isinstance(lo, int) and isinstance(hi, int) and isinstance(value, float):
-                    if value != int(value):
+                # 整数范围 → value 必须是整（除非 range 本身是 float 归一化）
+                if isinstance(lo, int) and isinstance(hi, int):
+                    if isinstance(value, float) and not value.is_integer():
                         raise SandboxError(
                             f"'{command}' expects integer, got {value}")
 

@@ -324,7 +324,11 @@ class Handler(BaseHTTPRequestHandler):
                 from . import tracker
             except ImportError:
                 tracker = None
-            self._json({"events": tracker.lead_timeline(int(m.group(1)))})
+            if tracker is None:
+                self._json({"ok": False, "degraded": True, "module_missing": "tracker",
+                            "events": [], "note": "tracker module not installed — lead timeline unavailable"})
+            else:
+                self._json({"events": tracker.lead_timeline(int(m.group(1)))})
             return
         m = re.match(r"^/api/lead/(\d+)/enrich$", path)
         if m:
@@ -704,10 +708,11 @@ class Handler(BaseHTTPRequestHandler):
             lim = int((qs.get("limit") or ["50"])[0])
             pool = NO_KEY_APIS
             if cat:
-                pool = [a for a in pool if cat.lower() in a["category"].lower()]
+                pool = [a for a in pool if cat.lower() in (a.get("category") or "").lower()]
             items = [{
-                "name": a["name"], "category": a["category"],
-                "link": a["link"][:80], "https": a["https"], "cors": a["cors"],
+                "name": a.get("name", ""), "category": a.get("category", ""),
+                "link": (a.get("link") or "")[:80], "https": a.get("https", False),
+                "cors": a.get("cors", "unknown"),
             } for a in pool[:lim]]
             self._json({
                 "ok": True, "total": len(pool), "items": items,
@@ -1478,6 +1483,76 @@ class Handler(BaseHTTPRequestHandler):
             })
             return
 
+        # ── 硬件发现 ──
+        if path == "/api/hardware/discover":
+            """真实 transport endpoint 枚举 (Serial / USB / TCP)."""
+            from .hardware import discovery as _DC
+            eps = _DC.discover_all()
+            out = []
+            for e in eps:
+                out.append({
+                    "kind": e.kind, "address": e.address,
+                    "vid": e.vid, "pid": e.pid,
+                    "name": (e.name or "")[:60],
+                })
+            self._json({
+                "ok": True, "total": len(eps), "endpoints": out,
+                "serial_count": sum(1 for e in eps if e.kind == "serial"),
+                "usb_count":    sum(1 for e in eps if e.kind in ("usb","hid")),
+                "tcp_count":    sum(1 for e in eps if e.kind in ("tcp","modbus","opcua","mqtt")),
+            })
+            return
+
+        # ── Kernel 统一入口 (GET: stats) ──
+        if path == "/api/hardware/kernel":
+            """GET: kernel stats + connected devices."""
+            from .hardware import get_kernel
+            try:
+                k = get_kernel()
+                st = k.stats()
+                connected = []
+                for sn, info in st.get("devices", {}).items():
+                    connected.append({
+                        "sn": sn, "device_class": info["class"],
+                        "caps": info["caps"],
+                        "learning_factor": round(info["learning_factor"], 3),
+                    })
+                self._json({
+                    "ok": True,
+                    "connects": st["connects"], "commands": st["commands"],
+                    "failures": st["failures"], "connected": st["connected"],
+                    "registry_total": st["registry_total"],
+                    "vocab_size": st["vocab_size"],
+                    "devices": connected,
+                })
+            except Exception as e:
+                self._json({"ok": False, "error": str(e)}, 500)
+            return
+
+        # ── Kernel command ──
+        m = re.match(r"^/api/hardware/kernel/([^/]+)/(read|write)/(.+)$", path)
+        if m:
+            """/api/hardware/kernel/{sn}/{read|write}/{cap_name}[?value=0.8]"""
+            sn, ctype, cap = m.groups()
+            from .hardware import get_kernel
+            qs = parse_qs(u.query)
+            try:
+                k = get_kernel()
+                val_raw = qs.get("value", [None])[0]
+                value = None
+                if val_raw is not None and val_raw != "":
+                    # 推断类型: int / float / bool
+                    if val_raw.lower() in ("true","false"): value = val_raw.lower() == "true"
+                    elif "." in val_raw: value = float(val_raw)
+                    else:
+                        try: value = int(val_raw)
+                        except ValueError: value = float(val_raw)
+                res = k.command(sn, cap, value=value)
+                self._json(res)
+            except Exception as e:
+                self._json({"ok": False, "error": str(e)}, 500)
+            return
+
         if path == "/api/hardware/sandbox-test":
             """安全边界测试: ?cmd=erase_flash&perm=normal"""
             from .hardware import descriptor as _D, sandbox as _SB
@@ -1535,7 +1610,50 @@ class Handler(BaseHTTPRequestHandler):
                 self._json({"ok": False, "error": str(e)}, 500)
             return
 
-        m = re.match(r"^/api/hardware/skills/(?!register)([a-z0-9_]+)$", path)
+        # ========== HARDWARE SKILL: demo (批量模拟) ==========
+        if path == "/api/hardware/skills/demo":
+            """批量模拟演示全部 120+ skills 的 2s 数据."""
+            try:
+                from .hardware.skill_runtime import engine as _eng
+                eng = _eng()
+                qs = parse_qs(u.query)
+                sec = float((qs.get("seconds") or ["2.0"])[0])
+                self._json(eng.demo(seconds=sec))
+            except Exception as e:
+                self._json({"ok": False, "error": str(e)}, 500)
+            return
+
+        # ========== HARDWARE SKILL: compose (自动组合) ==========
+        if path == "/api/hardware/skills/compose":
+            """根据 task 关键词自动组合 skills."""
+            try:
+                from .hardware.skill_runtime import engine as _eng
+                eng = _eng()
+                qs = parse_qs(u.query)
+                task = (qs.get("task") or ["monitoring"])[0].strip()
+                self._json(eng.compose(task))
+            except Exception as e:
+                self._json({"ok": False, "error": str(e)}, 500)
+            return
+
+        # ========== HARDWARE SKILL: search (关键词搜索) ==========
+        if path == "/api/hardware/skills/search":
+            """按关键词搜索 skills."""
+            try:
+                from .hardware.skill_runtime import engine as _eng, search as _srch
+                qs = parse_qs(u.query)
+                kw = (qs.get("q") or [""])[0].strip()
+                fuzzy = (qs.get("fuzzy") or ["true"])[0].lower() != "false"
+                if kw:
+                    self._json({"ok": True, "keyword": kw, "results": _srch(kw)})
+                else:
+                    eng = _eng()
+                    self._json({"ok": True, "tip": "use ?q=keyword", "total": eng.count()})
+            except Exception as e:
+                self._json({"ok": False, "error": str(e)}, 500)
+            return
+
+        m = re.match(r"^/api/hardware/skills/(?!register|demo|compose|search)([a-z0-9_]+)$", path)
         if m:
             """单个 skill 详情 + live reads + simulate."""
             try:
@@ -1562,6 +1680,94 @@ class Handler(BaseHTTPRequestHandler):
                     "live_reads": live,
                     "descriptor": rt.descriptor,
                 })
+            except Exception as e:
+                self._json({"ok": False, "error": str(e)}, 500)
+            return
+
+        # ========== HARDWARE: orchestrate (多 skill 任务编排) ==========
+        if path == "/api/hardware/orchestrate":
+            """按 task 关键词 orchestrate — 组合 + 验证 + 返回执行计划."""
+            try:
+                from .hardware.skill_runtime import engine as _eng
+                eng = _eng()
+                qs = parse_qs(u.query)
+                task = (qs.get("task") or ["monitoring"])[0].strip()
+                result = eng.compose(task)
+                if result.get("ok"):
+                    # 给每个 skill 加 simulated plan
+                    result["orchestrated_plan"] = [
+                        {"skill": s["skill"], "device_class": s.get("device_class"),
+                         "actions": ["read_sensors", "process_data", "report_bus"]}
+                        for s in result.get("skills", [])
+                    ]
+                self._json(result)
+            except Exception as e:
+                self._json({"ok": False, "error": str(e)}, 500)
+            return
+
+        # ========== HARDWARE: plan (场景级规划) ==========
+        if path == "/api/hardware/plan":
+            """返回硬件系统的场景级规划 — 支持 ?scenario=monitoring."""
+            try:
+                from .hardware.skill_runtime import engine as _eng
+                eng = _eng()
+                qs = parse_qs(u.query)
+                scenario = (qs.get("scenario") or ["monitoring"])[0].strip()
+                compose_result = eng.compose(scenario)
+                classes = eng.list_by_class()
+                self._json({
+                    "ok": True, "scenario": scenario,
+                    "total_skills": eng.count(),
+                    "classes_available": sorted(classes.keys()),
+                    "plan": compose_result,
+                    "scenario_tips": {
+                        "monitoring": ["temperature_sensor", "imu_9axis", "radar_24ghz"],
+                        "robotics": ["servo_motor", "dc_motor", "mobile_base_diff"],
+                        "security": ["camera_1080p", "smart_lock_door", "radar_24ghz"],
+                        "medical": ["ecg_monitor", "infusion_pump"],
+                    },
+                })
+            except Exception as e:
+                self._json({"ok": False, "error": str(e)}, 500)
+            return
+
+        # ========== EXOSKELETON: status ==========
+        if path == "/api/exoskeleton/status":
+            """外骨骼运行状态 — 若模块存在则返回实时数据, 否则 degraded."""
+            try:
+                from .hardware.exoskeleton import get_status as _exo_status
+                self._json(_exo_status())
+            except ImportError:
+                # 没有 exoskeleton 模块 — 尝试用 robotic_arm_6dof 做 degraded
+                try:
+                    from .hardware.skill_runtime import engine as _eng
+                    eng = _eng()
+                    exo_like = ["robotic_arm_6dof", "humanoid_torso"]
+                    statuses = {}
+                    for name in exo_like:
+                        if name in eng.skill_names:
+                            try:
+                                rt = eng.get(name)
+                                caps = rt.capabilities
+                                first = caps[0]["name"] if caps else "unknown"
+                                statuses[name] = {
+                                    "device_class": rt.device_class,
+                                    "first_capability": first,
+                                    "live_read": rt.read(first),
+                                    "online": True,
+                                }
+                            except Exception as e:
+                                statuses[name] = {"online": False, "error": str(e)[:80]}
+                    self._json({
+                        "ok": True, "degraded": True, "module_missing": "exoskeleton",
+                        "message": "exoskeleton module not installed — showing robotic_arm_6dof / humanoid_torso instead",
+                        "proxy_skills": exo_like, "statuses": statuses,
+                    })
+                except Exception as e:
+                    self._json({
+                        "ok": False, "degraded": True, "module_missing": "exoskeleton",
+                        "error": str(e), "statuses": {},
+                    })
             except Exception as e:
                 self._json({"ok": False, "error": str(e)}, 500)
             return
@@ -1696,6 +1902,45 @@ class Handler(BaseHTTPRequestHandler):
                 self._json({"ok": False, "error": str(e)}, 400)
             except Exception as e:
                 self._json({"ok": False, "error": str(e)}, 500)
+            return
+
+        # ========== HARDWARE KERNEL (POST: simulate discover + connect) ==========
+        if u.path == "/api/hardware/kernel":
+            """POST: 触发 discover 并对每个 endpoint 走一遍 Kernel.connect (MockTransport 接管)."""
+            from .hardware import get_kernel, discovery as _DC, get_bus, reset_bus
+            from .hardware.descriptor import make_mock_descriptor
+            from .hardware.transports import MockTransport
+            reset_bus()
+            k = get_kernel()
+            eps = _DC.discover_all()
+            simulated = 0; connected = []
+            for ep in eps:
+                dc = "sensor" if ep.kind == "hid" else ("actuator" if ep.kind == "usb" else "gateway")
+                d = make_mock_descriptor(vendor_id="mock", device_class=dc, name=f"{ep.kind}_dev")
+                d["serial_number"] = f"KRN-{dc.upper()}-{ep.vid or 'UNK'}-{ep.pid or 'UNK'}-{simulated:02d}"
+                d["vendor_id"] = ep.vid or "unknown"
+                mt = MockTransport(
+                    address=f"mock://kernel/{ep.kind}_{simulated}",
+                    descriptor=d, bus=get_bus(),
+                )
+                dev = k.connect(ep, transport_factory=lambda _, _mt=mt: _mt)
+                if dev:
+                    connected.append({
+                        "sn": dev.sn, "device_class": dev.device_class,
+                        "endpoint": ep.address, "transport_address": dev.address,
+                        "caps": len(dev.capabilities),
+                    })
+                    simulated += 1
+            st = k.stats()
+            self._json({
+                "ok": True, "simulated": simulated,
+                "endpoints_found": len(eps),
+                "connected_devices": connected,
+                "kernel_stats": {
+                    "connects": st["connects"], "commands": st["commands"],
+                    "failures": st["failures"], "registry_total": st["registry_total"],
+                },
+            })
             return
 
         # ---- 工单 POST ----

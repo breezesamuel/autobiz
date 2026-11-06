@@ -70,6 +70,17 @@ class Device:
 
 # ---- 核心内核 ----
 
+_global_kernel: "Kernel | None" = None
+
+
+def get_kernel() -> "Kernel":
+    """模块级单例 — 所有 dashboard/handler 共享同一个 Kernel 实例."""
+    global _global_kernel
+    if _global_kernel is None:
+        _global_kernel = Kernel()
+    return _global_kernel
+
+
 class Kernel:
     """单例内核——所有硬件操作的唯一入口。"""
 

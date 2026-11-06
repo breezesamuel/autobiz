@@ -11,8 +11,8 @@
   capabilities: [            能力词汇表（内核用语义命令匹配）
     {"name": "temperature", "type": "read",   "unit": "°C", "range": [-40, 85]},
     {"name": "humidity",    "type": "read",   "unit": "%",  "range": [0, 100]},
-    {"name": "led",         "type": "write", "unit": "",   "range": [0, 1]},
-    {"name": "relay",       "type": "write", "unit": "",   "range": [0, 1]},
+    {"name": "led",         "type": "write", "unit": "",   "range": [0.0, 1.0]},
+    {"name": "relay",       "type": "write", "unit": "",   "range": [0.0, 1.0]},
   ]
   pinout: [                  固件引脚表（可选，但有了就能零硬编码）
     {"pin": 1, "role": "VCC",   "voltage": 3.3},
@@ -110,9 +110,9 @@ def make_mock_descriptor(
             ]
         elif device_class == "actuator":
             caps = [
-                {"name": "led",     "type": "write", "unit": "", "range": [0, 1]},
+                {"name": "led",     "type": "write", "unit": "", "range": [0.0, 1.0]},
                 {"name": "intensity","type": "write", "unit": "", "range": [0.0, 1.0]},
-                {"name": "relay",   "type": "write", "unit": "", "range": [0, 1]},
+                {"name": "relay",   "type": "write", "unit": "", "range": [0.0, 1.0]},
             ]
         else:
             caps = [{"name": "ping", "type": "exec"}]

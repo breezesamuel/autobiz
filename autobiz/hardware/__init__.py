@@ -8,7 +8,7 @@
   from autobiz.hardware.skill_runtime import SkillRuntime, SkillEngine, engine
   from autobiz.hardware.skill_runtime import DataBus, get_bus, reset_bus
 """
-from .kernel import Kernel, Device
+from .kernel import Kernel, Device, get_kernel
 from .descriptor import (DescriptorError, validate, make_mock_descriptor,
                           capability_names)
 from .handshake import Handshake, HandshakeError
@@ -25,7 +25,7 @@ from .skill_factory import SkillFactory
 
 __all__ = [
     # 核心 8 件事
-    "Kernel", "Device",
+    "Kernel", "Device", "get_kernel",
     "DescriptorError", "validate", "make_mock_descriptor", "capability_names",
     "Handshake", "HandshakeError",
     "Registry", "DeviceEntry", "get_registry",
