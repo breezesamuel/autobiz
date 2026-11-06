@@ -1366,12 +1366,19 @@ class Handler(BaseHTTPRequestHandler):
                                 "unit": cap.get("unit", ""),
                             }
                     except Exception: pass
+                # 自定义 skills 列表 (try-except 降级)
+                try:
+                    from .hardware.skill_factory import SkillFactory as _SF
+                    custom_list = _SF.list_custom()
+                except Exception:
+                    custom_list = []
                 self._json({
                     "ok": True, "total": eng.count(),
                     "classes": sorted(by_class.keys()),
                     "by_class": {cls: {"count": len(n), "sample_skills": n[:5]}
                                  for cls, n in by_class.items()},
                     "live_reads": samples,
+                    "custom_skills": custom_list,
                 })
             except Exception as e:
                 self._json({"ok": False, "error": str(e)}, 500)
@@ -1541,6 +1548,46 @@ class Handler(BaseHTTPRequestHandler):
             body = json.loads(raw or b"{}")
         except Exception:
             self._json({"error": "bad json"}, 400)
+            return
+
+        # ========== HARDWARE SKILL FACTORY (运行时动态注册) ==========
+        if u.path == "/api/hardware/skills":
+            """POST: 运行时注册新 skill.
+
+            Body JSON:
+              {
+                "name": "my_custom_sensor",
+                "device_class": "sensor",
+                "vendor_id": "my_v1",         // optional, default "custom_v1"
+                "capabilities": [
+                  {"name": "temp", "type": "read", "range": [-40, 85], "unit": "°C"},
+                  {"name": "alert", "type": "exec"}
+                ]
+              }
+            """
+            try:
+                from .hardware.skill_factory import SkillFactory
+                sf = SkillFactory
+                name = body.get("name", "").strip()
+                cls = body.get("device_class", "")
+                caps = body.get("capabilities", [])
+                if not name or not cls or not caps:
+                    self._json({"ok": False,
+                                "error": "need name, device_class, capabilities"}, 400)
+                    return
+                desc = sf.register(
+                    name=name,
+                    device_class=cls,
+                    capabilities=caps,
+                    vendor_id=body.get("vendor_id", "custom_v1"),
+                    **{k: v for k, v in body.items()
+                       if k not in ("name", "device_class", "capabilities", "vendor_id")})
+                self._json({"ok": True, "descriptor": desc,
+                            "custom_count": sf.count()}, 201)
+            except ValueError as e:
+                self._json({"ok": False, "error": str(e)}, 400)
+            except Exception as e:
+                self._json({"ok": False, "error": str(e)}, 500)
             return
 
         # ---- 工单 POST ----
@@ -1933,6 +1980,26 @@ class Handler(BaseHTTPRequestHandler):
             path = export_proposals_csv(format=fmt, limit=lim)
             import os
             self._json({"ok": True, "path": path, "size": os.path.getsize(path), "format": fmt, "limit": lim})
+            return
+
+        self._json({"error": "unknown endpoint"}, 404)
+
+    def do_DELETE(self) -> None:
+        u = urlparse(self.path)
+        m = re.match(r"^/api/hardware/skills/([a-z_]+)$", u.path)
+        if m:
+            """DELETE: 注销运行时注册的自定义 skill."""
+            try:
+                from .hardware.skill_factory import SkillFactory
+                name = m.group(1)
+                if not SkillFactory.is_custom(name):
+                    self._json({"ok": False,
+                                "error": f"{name!r} is not a custom skill (cannot delete static)"}, 400)
+                    return
+                ok = SkillFactory.unregister(name)
+                self._json({"ok": ok, "name": name})
+            except Exception as e:
+                self._json({"ok": False, "error": str(e)}, 500)
             return
 
         self._json({"error": "unknown endpoint"}, 404)
