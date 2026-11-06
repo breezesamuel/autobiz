@@ -14,6 +14,121 @@ STATIC = ROOT / "static" / "dashboard.html"
 _PAY_CACHE = {"t": 0.0, "data": None}
 _start_time = time.time()
 
+# ================================================================
+# CYCLE ENGINE globals (后台守护循环)
+# ================================================================
+import threading as _th
+_cycle_state: dict = {
+    "running": False,
+    "thread": None,
+    "round_idx": 0,
+    "last_round_start": None,
+    "last_round_elapsed": None,
+    "last_result": None,
+    "interval": 30.0,
+    "total_runs": 0,
+}
+_cycle_lock = _th.Lock()
+
+
+def _cycle_thread_fn(interval: float):
+    """后台 cycle 线程 — 每 interval 秒跑一轮完整 ROUND_SEQUENCE."""
+    import time as _t
+    from concurrent.futures import ThreadPoolExecutor, TimeoutError as _FutureTimeout
+    from .cycle import ROUND_SEQUENCE
+    from . import db as _db
+    PHASE_TIMEOUT = 30  # 每个 phase 硬超时秒数
+    while True:
+        with _cycle_lock:
+            if not _cycle_state["running"]:
+                return  # 停止信号
+            round_idx = _cycle_state["round_idx"]
+        t0 = _t.time()
+        results = {}
+        for fn, label, mod in ROUND_SEQUENCE:
+            with _cycle_lock:
+                if not _cycle_state["running"]:
+                    return
+            if mod == 0 or (round_idx % mod == 0):
+                # 每个 phase 独立线程 + 30s 硬超时 — 防止 crawl/score 卡死整轮
+                try:
+                    _pool = ThreadPoolExecutor(max_workers=1)
+                    fut = _pool.submit(fn)
+                    try:
+                        results[label] = fut.result(timeout=PHASE_TIMEOUT)
+                    except TimeoutError:
+                        results[label] = {"cycle_timeout": f">{PHASE_TIMEOUT}s (skipped)"}
+                    finally:
+                        # cancel pending futures, 不等 running 完成 (硬截断)
+                        _pool.shutdown(wait=False, cancel_futures=True)
+                except Exception as e:
+                    results[label] = {"cycle_crash": str(e)[:120]}
+        elapsed = _t.time() - t0
+        with _cycle_lock:
+            _cycle_state["round_idx"] += 1
+            _cycle_state["last_round_start"] = t0
+            _cycle_state["last_round_elapsed"] = round(elapsed, 2)
+            _cycle_state["last_result"] = {
+                "round": _cycle_state["round_idx"],
+                "elapsed": round(elapsed, 2),
+                "results": {k: (v.get("ok", "?") if isinstance(v, dict) else "ok")
+                            for k, v in results.items()},
+            }
+            _cycle_state["total_runs"] += 1
+            sleep_for = max(0, interval - elapsed)
+            # 用分段 sleep 让 stop 能快速响应
+            slept = 0
+            while slept < sleep_for:
+                with _cycle_lock:
+                    if not _cycle_state["running"]:
+                        return
+                _t.sleep(min(2.0, sleep_for - slept))
+                slept += 2.0
+
+
+def _cycle_start(interval: float = 30.0) -> dict:
+    """启动后台 cycle 线程 (幂等)."""
+    with _cycle_lock:
+        if _cycle_state["running"]:
+            return {"ok": True, "already_running": True,
+                    "round_idx": _cycle_state["round_idx"]}
+        _cycle_state["running"] = True
+        _cycle_state["interval"] = interval
+        _cycle_state["round_idx"] = 0
+        th = _th.Thread(target=_cycle_thread_fn, args=(interval,), daemon=True,
+                        name="autobiz-cycle")
+        _cycle_state["thread"] = th
+        th.start()
+        return {"ok": True, "started": True, "interval": interval}
+
+
+def _cycle_stop() -> dict:
+    """停后台 cycle 线程 (幂等)."""
+    with _cycle_lock:
+        _cycle_state["running"] = False
+        _cycle_state["thread"] = None
+    return {"ok": True, "stopped": True}
+
+
+def _cycle_status() -> dict:
+    """读 cycle 状态 (快照)."""
+    from .cycle import ROUND_SEQUENCE
+    phase_info = [{"label": label, "interval_mod": mod} for _, label, mod in ROUND_SEQUENCE]
+    with _cycle_lock:
+        return {
+            "ok": True,
+            "running": _cycle_state["running"],
+            "interval": _cycle_state["interval"],
+            "round_idx": _cycle_state["round_idx"],
+            "last_round_start": _cycle_state["last_round_start"],
+            "last_round_elapsed": _cycle_state["last_round_elapsed"],
+            "last_result": _cycle_state["last_result"],
+            "total_runs": _cycle_state["total_runs"],
+            "thread_alive": (_cycle_state["thread"] is not None
+                            and _cycle_state["thread"].is_alive()),
+            "phases": phase_info,
+        }
+
 
 def _payments_status() -> dict:
     """支付通道健康检查，300s 缓存。1.5s 硬超时——PayPal health 冷启动要 6.8s 不能让 API 卡死."""
@@ -1430,6 +1545,108 @@ class Handler(BaseHTTPRequestHandler):
                        extra_headers={"Content-Disposition": f'attachment; filename="{fname}"'})
             return
 
+        # ========== CYCLE ENGINE — 守护循环状态 + 手动 phase ==========
+        if path == "/api/cycle/status":
+            self._json(_cycle_status())
+            return
+
+        if path == "/api/cycle/phases":
+            """列出 10 个 cycle phase + 手动触发入口."""
+            try:
+                from .cycle import ROUND_SEQUENCE
+                from .pipeline import (phase_crawl, phase_score, phase_enrich,
+                                       phase_propose, run_email_send,
+                                       run_replybot_auto, run_invoice_pending,
+                                       crm_enrich_pending)
+                from .workflows_missing import (workflow_health,
+                    workflow_risk_scan, workflow_content_feed, workflow_self_evolve)
+                phase_map = {
+                    "risk+health": [workflow_health, workflow_risk_scan],
+                    "crawl": [lambda: phase_crawl()],
+                    "score+price": [phase_score],
+                    "enrich+prop": [lambda: phase_enrich(limit=10, scrape_homepage=False, only_new=False),
+                                    lambda: phase_propose(limit=5)],
+                    "email": [lambda: run_email_send(limit=2, dry_run=True)],
+                    "replybot": [run_replybot_auto],
+                    "invoice+deliv": [run_invoice_pending],
+                    "crm": [lambda: crm_enrich_pending(limit=10)],
+                    "content+disc": [workflow_content_feed],
+                    "evolve+data": [workflow_self_evolve],
+                }
+                info = []
+                for fn, label, mod in ROUND_SEQUENCE:
+                    info.append({
+                        "label": label, "interval_mod": mod,
+                        "description": {
+                            "risk+health": "系统存活探针 + 风控扫描 (每轮)",
+                            "crawl": "抓取 1 个渠道 (每 10 轮)",
+                            "score+price": "评分 + 自动定价 (每 5 轮)",
+                            "enrich+prop": "富化 + 生成提案草稿 (每 3 轮)",
+                            "email": "邮件 dry-run + 发送 (每轮)",
+                            "replybot": "IMAP 轮询 + 自动回复 (每 4 轮)",
+                            "invoice+deliv": "给 replied lead 开发票 (每 2 轮)",
+                            "crm": "CRM 分类补充 (每 3 轮)",
+                            "content+disc": "内容 feed + 蜘蛛发现 (每 5 轮)",
+                            "evolve+data": "自进化 + 数据闭环 (每 10 轮)",
+                        }.get(label, label),
+                        "available": label in phase_map,
+                    })
+                self._json({"ok": True, "phases": info,
+                            "run_endpoint": "/api/cycle/run-phase?phase=label"})
+            except Exception as e:
+                self._json({"ok": False, "error": str(e)}, 500)
+            return
+
+        if path.startswith("/api/cycle/run-phase"):
+            """手动触发单个 phase — ?phase=label."""
+            try:
+                from .cycle import ROUND_SEQUENCE
+                from .pipeline import (phase_crawl, phase_score, phase_enrich,
+                                       phase_propose, run_email_send,
+                                       run_replybot_auto, run_invoice_pending,
+                                       crm_enrich_pending)
+                from .workflows_missing import (workflow_health,
+                    workflow_risk_scan, workflow_content_feed, workflow_self_evolve)
+                qs = parse_qs(u.query)
+                label = (qs.get("phase") or [""])[0]
+                dry = (qs.get("dry_run") or ["true"])[0].lower() != "false"
+
+                phase_map = {
+                    "risk+health":    [workflow_health, workflow_risk_scan],
+                    "crawl":          [lambda: phase_crawl()],
+                    "score+price":    [phase_score],
+                    "enrich+prop":    [lambda: phase_enrich(limit=10, scrape_homepage=False, only_new=False),
+                                       lambda: phase_propose(limit=5)],
+                    "email":          [lambda: run_email_send(limit=2, dry_run=dry)],
+                    "replybot":       [run_replybot_auto],
+                    "invoice+deliv":  [run_invoice_pending],
+                    "crm":            [lambda: crm_enrich_pending(limit=10)],
+                    "content+disc":   [workflow_content_feed],
+                    "evolve+data":    [workflow_self_evolve],
+                }
+                if not label:
+                    self._json({"ok": False, "error": "?phase=label required",
+                                "available": list(phase_map.keys())}, 400)
+                    return
+                if label not in phase_map:
+                    self._json({"ok": False, "error": f"unknown phase: {label}",
+                                "available": list(phase_map.keys())}, 404)
+                    return
+                results = {}
+                t0 = time.time()
+                for fn in phase_map[label]:
+                    try:
+                        r = fn()
+                        results[fn.__name__ if hasattr(fn, "__name__") else "phase"] = r
+                    except Exception as e:
+                        results["error"] = str(e)[:200]
+                self._json({"ok": True, "phase": label,
+                            "elapsed_sec": round(time.time() - t0, 2),
+                            "results": results})
+            except Exception as e:
+                self._json({"ok": False, "error": str(e)}, 500)
+            return
+
         # ========== HARDWARE KERNEL (11 模块真实可用) ==========
         if path == "/api/hardware/simulator":
             """模拟硬件列表 + 内核自检."""
@@ -1551,6 +1768,184 @@ class Handler(BaseHTTPRequestHandler):
                 self._json(res)
             except Exception as e:
                 self._json({"ok": False, "error": str(e)}, 500)
+            return
+
+        # ── AI 全景洞察 (vector.py 深度分析) ──
+        m_vec = re.match(r"^/api/vector(?:/([a-z_]+))?$", path)
+        if m_vec:
+            sub = m_vec.group(1) or "deep"
+            from .ai.vector import (
+                deep_analyze_leads, analyze_leads, build_tfidf, kmeans,
+                geometric_coverage, isolation_forest, label_propagation,
+                pagerank, bridge_score, pareto_frontier, pareto_rank,
+                bayesian_keyword_update, log_utility, multiobjective_rank,
+                build_similarity_graph, cosine_sim, local_outlier_factor,
+            )
+            from . import db as _DB
+
+            # 从 DB 拉 leads
+            qs = parse_qs(u.query)
+            min_score = float((qs.get("min_score") or ["30"])[0])
+            limit = int((qs.get("limit") or ["50"])[0])
+            try:
+                conn = _DB.get_conn()
+                rows = conn.execute(
+                    "SELECT * FROM leads WHERE score >= ? "
+                    "ORDER BY score DESC LIMIT ?",
+                    (min_score, limit)
+                ).fetchall()
+                leads = [dict(r) for r in rows]
+            except Exception as e:
+                self._json({"ok": False, "error": f"DB 失败: {e}"}, 500)
+                return
+
+            if not leads:
+                self._json({"ok": True, "ok_data": True, "total": 0, "message": f"无 score>={min_score} 的 leads"})
+                return
+
+            docs = [f"{l.get('title','')} {l.get('description','')}" for l in leads]
+
+            try:
+                if sub == "deep":
+                    # 全景深度分析 (总包)
+                    result = deep_analyze_leads(leads)
+                    if not result.get("ok"):
+                        self._json(result, 400)
+                        return
+
+                    # 给 dashboard 加 leads 摘要 (top 15)
+                    ranked = result["ranked_indices"][:15]
+                    result["_top_leads"] = [
+                        {
+                            "index": i,
+                            "title": leads[i].get("title", "")[:60],
+                            "score": leads[i].get("score", 0),
+                            "budget_max": leads[i].get("budget_max", 0),
+                            "source": leads[i].get("source", ""),
+                            "community": result["communities"][i],
+                            "pagerank": result["pagerank"][i],
+                            "bridge": result["bridge_scores"][i],
+                            "anomaly": result["anomaly_iforest"][i],
+                        }
+                        for i in ranked
+                    ]
+                    # 异常点 (Iforest > 0.6)
+                    result["_anomaly_leads"] = [
+                        {
+                            "index": i,
+                            "title": leads[i].get("title", "")[:60],
+                            "score": leads[i].get("score", 0),
+                            "budget_max": leads[i].get("budget_max", 0),
+                            "anomaly": result["anomaly_iforest"][i],
+                            "lof": result["anomaly_lof"][i],
+                        }
+                        for i in range(len(leads))
+                        if result["anomaly_iforest"][i] > 0.6
+                    ]
+                    # 加 DB 统计头信息
+                    result["_source_stats"] = {
+                        "db_total": conn.execute("SELECT COUNT(*) FROM leads").fetchone()[0],
+                        "selected": len(leads),
+                        "min_score": min_score,
+                    }
+                    self._json(result)
+
+                elif sub == "cluster":
+                    # K-Means + 聚类关键词
+                    matrix, vocab = build_tfidf(docs)
+                    k = min(int((qs.get("k") or ["5"])[0]), max(2, len(leads)))
+                    labels, centers, inertia = kmeans(matrix, k=k)
+                    from collections import Counter
+                    # 每个 cluster 的 top keyword
+                    cluster_kw = {}
+                    for ci in range(k):
+                        idx = [i for i, l in enumerate(labels) if l == ci]
+                        if not idx: continue
+                        # 累计 vocab frequency
+                        vcounts = {}
+                        for i in idx:
+                            for vi, val in enumerate(matrix[i]):
+                                if val > 0.01:
+                                    word = [w for w, j in vocab.items() if j == vi]
+                                    if word:
+                                        vcounts[word[0]] = vcounts.get(word[0], 0) + val
+                        top_kw = sorted(vcounts.items(), key=lambda x: -x[1])[:5]
+                        cluster_kw[str(ci)] = [w for w, _ in top_kw]
+                    self._json({
+                        "ok": True, "total": len(leads), "vocab": len(vocab),
+                        "k": k, "inertia": round(inertia, 3),
+                        "cluster_counts": dict(Counter(labels)),
+                        "cluster_top_keywords": cluster_kw,
+                    })
+
+                elif sub == "pagerank":
+                    # 只跑 PageRank
+                    matrix, vocab = build_tfidf(docs)
+                    graph = build_similarity_graph(matrix, threshold=float((qs.get("t") or ["0.30"])[0]))
+                    pr = pagerank(graph)
+                    bridges = bridge_score(graph, label_propagation(graph))
+                    self._json({
+                        "ok": True, "total": len(leads),
+                        "pagerank": [round(x, 4) for x in pr],
+                        "bridge_scores": [round(x, 4) for x in bridges],
+                        "top_by_pr": sorted(range(len(pr)), key=lambda i: -pr[i])[:10],
+                    })
+
+                elif sub == "anomaly":
+                    # Isolation Forest + LOF
+                    matrix, vocab = build_tfidf(docs)
+                    iforest = isolation_forest(matrix)
+                    lof = local_outlier_factor(matrix)
+                    self._json({
+                        "ok": True, "total": len(leads),
+                        "iforest": [round(x, 4) for x in iforest],
+                        "lof": [round(x, 4) for x in lof],
+                        "anomaly_count": sum(1 for s in iforest if s > 0.6),
+                        "top_anomalies": sorted(range(len(iforest)), key=lambda i: -iforest[i])[:10],
+                    })
+
+                elif sub == "pareto":
+                    # Pareto 定价前沿
+                    points = []
+                    for i, l in enumerate(leads):
+                        profit = float(l.get("budget_max") or l.get("budget_min") or 0) * 0.3
+                        budget = float(l.get("budget_max") or l.get("budget_min") or 0)
+                        points.append((profit, budget, l.get("title", "")[:50]))
+                    front = pareto_frontier(points)
+                    self._json({
+                        "ok": True, "total": len(leads),
+                        "pareto_front": [
+                            {"profit": round(p[0], 2), "budget": round(p[1], 2), "title": p[2]}
+                            for p in front
+                        ],
+                    })
+
+                elif sub == "bayesian":
+                    # 贝叶斯关键词权重 (后验均值 + CI95)
+                    kw_hits = [l.get("description", "").lower().split()[:15] for l in leads]
+                    outcomes = [1 if (l.get("score") or 0) > 60 else 0 for l in leads]
+                    bayes = bayesian_keyword_update(kw_hits, outcomes)
+                    top_kw = sorted(bayes.items(), key=lambda x: -x[1]["posterior_mean"])[:20]
+                    self._json({
+                        "ok": True, "total": len(leads),
+                        "top_keywords": [
+                            {
+                                "kw": k, "posterior_mean": round(v["posterior_mean"], 4),
+                                "ci95_low": round(v["ci_95"][0], 4),
+                                "ci95_high": round(v["ci_95"][1], 4),
+                                "exposure": v["exposure"], "z_score": round(v["z_score"], 3),
+                            }
+                            for k, v in top_kw
+                        ],
+                    })
+
+                else:
+                    self._json({"ok": False, "error": f"未知向量分析子命令: {sub}",
+                                "valid": ["deep", "cluster", "pagerank", "anomaly", "pareto", "bayesian"]}, 400)
+
+            except Exception as e:
+                import traceback
+                self._json({"ok": False, "error": str(e), "traceback": traceback.format_exc()}, 500)
             return
 
         if path == "/api/hardware/sandbox-test":
@@ -1875,6 +2270,61 @@ class Handler(BaseHTTPRequestHandler):
             body = json.loads(raw or b"{}")
         except Exception:
             self._json({"error": "bad json"}, 400)
+            return
+
+        # ========== CYCLE ENGINE POST: start / stop / run-phase ==========
+        if u.path == "/api/cycle/start":
+            interval = float((body or {}).get("interval", 30.0))
+            self._json(_cycle_start(interval=interval))
+            return
+
+        if u.path == "/api/cycle/stop":
+            self._json(_cycle_stop())
+            return
+
+        if u.path == "/api/cycle/run-phase":
+            """POST 同步触发 phase — body: {"phase": "crm", "dry_run": true}."""
+            b = body or {}
+            label = b.get("phase", "")
+            dry = b.get("dry_run", True)
+            if not label:
+                self._json({"ok": False, "error": "phase required"}, 400)
+                return
+            # 直接用 GET run-phase 同样的逻辑 — 简单起见复用
+            from .pipeline import (phase_crawl, phase_score, phase_enrich,
+                                   phase_propose, run_email_send,
+                                   run_replybot_auto, run_invoice_pending,
+                                   crm_enrich_pending)
+            from .workflows_missing import (workflow_health,
+                workflow_risk_scan, workflow_content_feed, workflow_self_evolve)
+            phase_map = {
+                "risk+health":    [workflow_health, workflow_risk_scan],
+                "crawl":          [lambda: phase_crawl()],
+                "score+price":    [phase_score],
+                "enrich+prop":    [lambda: phase_enrich(limit=10, scrape_homepage=False, only_new=False),
+                                   lambda: phase_propose(limit=5)],
+                "email":          [lambda: run_email_send(limit=2, dry_run=dry)],
+                "replybot":       [run_replybot_auto],
+                "invoice+deliv":  [run_invoice_pending],
+                "crm":            [lambda: crm_enrich_pending(limit=10)],
+                "content+disc":   [workflow_content_feed],
+                "evolve+data":    [workflow_self_evolve],
+            }
+            if label not in phase_map:
+                self._json({"ok": False, "error": f"unknown phase: {label}",
+                            "available": list(phase_map.keys())}, 404)
+                return
+            results = {}
+            t0 = time.time()
+            for fn in phase_map[label]:
+                try:
+                    r = fn()
+                    results[getattr(fn, "__name__", "phase")] = r
+                except Exception as e:
+                    results["error"] = str(e)[:200]
+            self._json({"ok": True, "phase": label,
+                        "elapsed_sec": round(time.time() - t0, 2),
+                        "results": results})
             return
 
         # ========== 代理刷新 (Clash/V2Ray 启动后) ==========

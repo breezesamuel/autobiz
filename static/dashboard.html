@@ -300,6 +300,40 @@ tbody tr:last-child td { border-bottom: none; }
         </div>
       </div>
 
+      <!-- HAK v2.0 SCENARIOS — 7 大类预设场景 -->
+      <div class="section" style="margin-top:16px">
+        <div class="section-header">🎬 HAK v2.0 Scenarios · 8 大类场景化组合
+          <span class="tag tag-purple" id="hw-scenarios-count">加载中...</span>
+        </div>
+        <div class="section-body">
+          <div id="hw-scenarios-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px"></div>
+        </div>
+      </div>
+
+      <!-- 🧠 AI 全景洞察 — vector.py 976 行算法矩阵 -->
+      <div class="section" style="margin-top:16px">
+        <div class="section-header">🧠 AI 全景洞察 · 12 算法矩阵
+          <span class="tag" id="vec-status">idle</span>
+        </div>
+        <div class="section-body">
+          <div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap;align-items:center">
+            <label style="font-size:12px;color:var(--muted)">min_score</label>
+            <input id="vec-min-score" value="30" style="width:60px;padding:3px 8px;background:var(--card);color:var(--text);border:1px solid var(--border);border-radius:4px;font-size:12px">
+            <label style="font-size:12px;color:var(--muted)">limit</label>
+            <input id="vec-limit" value="30" style="width:60px;padding:3px 8px;background:var(--card);color:var(--text);border:1px solid var(--border);border-radius:4px;font-size:12px">
+            <button class="btn" onclick="vecRun('deep')">🔬 全景分析</button>
+            <button class="btn btn-ghost" onclick="vecRun('cluster')">Clusters</button>
+            <button class="btn btn-ghost" onclick="vecRun('pagerank')">PageRank</button>
+            <button class="btn btn-ghost" onclick="vecRun('anomaly')">Anomaly</button>
+            <button class="btn btn-ghost" onclick="vecRun('pareto')">Pareto</button>
+            <button class="btn btn-ghost" onclick="vecRun('bayesian')">Bayesian</button>
+            <span style="flex:1"></span>
+            <span style="font-size:12px;color:var(--muted)" id="vec-source">-</span>
+          </div>
+          <div id="vec-out" style="font-size:12px"></div>
+        </div>
+      </div>
+
       <!-- Skill 详情 Modal -->
       <div id="hw-skill-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:9999;align-items:center;justify-content:center" onclick="if(event.target.id==='hw-skill-modal')document.getElementById('hw-skill-modal').style.display='none'">
         <div style="background:var(--card);border:1px solid var(--border);border-radius:10px;max-width:560px;width:90%;max-height:80vh;overflow-y:auto;padding:24px">
@@ -766,6 +800,8 @@ async function loadHardware() {
   }
   // 刷新 kernel 状态（如果有已接管设备）
   hwKernelRefresh();
+  // 加载 Scenarios
+  loadHwScenarios();
 }
 
 // ===== HAK v2.0 Kernel — 真实硬件发现接管 =====
@@ -949,6 +985,182 @@ function updateKernelSummary(st) {
     tagEl.textContent = "idle";
     tagEl.style.color = "";
   }
+}
+
+// ===== 🧠 AI 全景洞察 (vector.py 976 行算法矩阵) =====
+
+async function vecRun(sub) {
+  const box = document.getElementById("vec-out");
+  const minScore = document.getElementById("vec-min-score").value || 30;
+  const limit = document.getElementById("vec-limit").value || 30;
+  box.innerHTML = `<div style="color:var(--muted);padding:20px;text-align:center">⏳ 跑 vector.py ${sub}... (真实数据 × ${limit} leads)</div>`;
+  document.getElementById("vec-status").textContent = "running";
+
+  const url = sub === "deep"
+    ? `/api/vector?min_score=${minScore}&limit=${limit}`
+    : `/api/vector/${sub}?min_score=${minScore}&limit=${limit}`;
+
+  const t0 = Date.now();
+  const d = await fetchJSON(url);
+  const dt = Date.now() - t0;
+
+  if (!d || !d.ok) {
+    box.innerHTML = `<div style="color:var(--red)">❌ ${d?.error || "失败"}</div>`;
+    document.getElementById("vec-status").textContent = "fail";
+    return;
+  }
+
+  const stats = d._source_stats
+    ? `db_total=${d._source_stats.db_total} · selected=${d._source_stats.selected}`
+    : `total=${d.total}`;
+  document.getElementById("vec-source").textContent = `${stats} · ${dt}ms`;
+  document.getElementById("vec-status").textContent = `${sub} ✓`;
+
+  let html = "";
+  switch (sub) {
+    case "deep":    html = renderDeep(d); break;
+    case "cluster": html = renderCluster(d); break;
+    case "pagerank":html = renderPagerank(d); break;
+    case "anomaly": html = renderAnomaly(d); break;
+    case "pareto":  html = renderPareto(d); break;
+    case "bayesian":html = renderBayesian(d); break;
+  }
+  box.innerHTML = html;
+}
+
+function renderDeep(d) {
+  const commColor = ["#4A9EFF","#FF6B6B","#4ECB71","#FFB454","#9B59B6","#1ABC9C","#E74C3C","#3498DB","#F39C12","#2ECC71"];
+  const commBar = Object.entries(d.community_counts || {}).map(([k, v]) => {
+    const pct = (v / d.total * 100).toFixed(1);
+    const c = commColor[parseInt(k) % commColor.length];
+    return `<div style="display:flex;align-items:center;gap:6px;margin:2px 0">
+      <span style="width:18px;height:14px;background:${c};border-radius:2px;display:inline-block;font-size:10px;line-height:14px;text-align:center;color:#fff">${k}</span>
+      <div style="flex:1;height:10px;background:var(--card2);border-radius:2px;overflow:hidden"><div style="width:${pct}%;height:100%;background:${c}"></div></div>
+      <span style="font-size:11px;color:var(--muted);width:42px;text-align:right">${pct}%</span>
+    </div>`;
+  }).join("");
+
+  const topLeads = (d._top_leads || []).map(x => {
+    const c = commColor[x.community % commColor.length];
+    return `<div style="padding:6px 10px;background:var(--card2);border-radius:4px;margin:3px 0;display:flex;gap:10px;align-items:center">
+      <span style="width:14px;height:14px;background:${c};border-radius:2px"></span>
+      <span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px">${safe(x.title)}</span>
+      <span style="font-size:11px;color:var(--muted)">$${Math.round(x.budget_max)}</span>
+      <span style="font-size:11px;color:var(--green)">${x.score}</span>
+      <span style="font-size:10px;color:var(--muted)">PR=${x.pagerank.toFixed(3)}</span>
+    </div>`;
+  }).join("");
+
+  const anomalies = (d._anomaly_leads || []).map(x =>
+    `<span style="color:var(--red);margin-right:8px" title="LOF=${x.lof.toFixed(2)}">${safe(x.title.slice(0,40))} [${x.anomaly.toFixed(2)}]</span>`
+  ).join("") || `<span style="color:var(--muted)">无 (Iforest threshold 0.6)</span>`;
+
+  return `
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+      <div>
+        <div style="font-size:11px;color:var(--muted);margin-bottom:4px">📊 社区分布 (Label Propagation · ${d.n_communities} 个)</div>
+        ${commBar}
+      </div>
+      <div>
+        <div style="font-size:11px;color:var(--muted);margin-bottom:4px">🚨 异常点 (Isolation Forest > 0.6)</div>
+        <div style="max-height:80px;overflow-y:auto">${anomalies}</div>
+        <div style="font-size:11px;color:var(--muted);margin-top:8px">📈 全局: pagerank 均值=${(d.pagerank.reduce((a,b)=>a+b,0)/d.pagerank.length).toFixed(3)}, bridge 均值=${(d.bridge_scores.reduce((a,b)=>a+b,0)/d.bridge_scores.length).toFixed(4)}, pareto_front=${d.pareto_front_size}/${d.total}</div>
+      </div>
+    </div>
+    <div style="margin-top:10px">
+      <div style="font-size:11px;color:var(--muted);margin-bottom:4px">🏆 多目标排序 Top 15 (score × budget × freshness × pagerank × bridge)</div>
+      ${topLeads}
+    </div>`;
+}
+
+function renderCluster(d) {
+  const commColor = ["#4A9EFF","#FF6B6B","#4ECB71","#FFB454","#9B59B6","#1ABC9C","#E74C3C","#3498DB","#F39C12","#2ECC71"];
+  let html = `<div style="font-size:11px;color:var(--muted);margin-bottom:6px">K-Means(k=${d.k_clusters}, inertia=${d.inertia})</div>`;
+  const counts = d.cluster_counts || {};
+  const topKw = d.cluster_top_keywords || {};
+  Object.entries(counts).sort((a,b)=>b[1]-a[1]).forEach(([ci, cnt]) => {
+    const c = commColor[parseInt(ci) % commColor.length];
+    const pct = (cnt / d.total * 100).toFixed(1);
+    const kw = (topKw[ci] || []).map(k => `<span style="background:${c}22;color:${c};padding:1px 6px;border-radius:10px;font-size:10px;margin-right:3px">${k}</span>`).join("");
+    html += `<div style="padding:6px 10px;background:var(--card2);border-radius:4px;margin:3px 0;display:flex;align-items:center;gap:10px">
+      <span style="width:16px;height:16px;background:${c};border-radius:3px;font-size:10px;color:#fff;display:inline-flex;align-items:center;justify-content:center">${ci}</span>
+      <span style="font-size:11px;color:var(--muted)">${cnt} leads (${pct}%)</span>
+      <span style="flex:1"></span>
+      <div>${kw}</div>
+    </div>`;
+  });
+  return html;
+}
+
+function renderPagerank(d) {
+  const topIdx = d.top_by_pr || [];
+  return `<div style="font-size:11px;color:var(--muted);margin-bottom:6px">🔗 PageRank 中心性 + Bridge Score</div>
+    ${topIdx.map(i => {
+      const pr = (d.pagerank || [])[i] || 0;
+      const br = (d.bridge_scores || [])[i] || 0;
+      const prBar = `<div style="width:100px;height:6px;background:var(--card2);border-radius:2px;overflow:hidden"><div style="width:${(pr*100*3).toFixed(0)}%;height:100%;background:#4A9EFF"></div></div>`;
+      const brBar = `<div style="width:100px;height:6px;background:var(--card2);border-radius:2px;overflow:hidden"><div style="width:${(Math.min(br*20,100)).toFixed(0)}%;height:100%;background:#FFB454"></div></div>`;
+      return `<div style="display:flex;align-items:center;gap:10px;margin:3px 0;font-size:11px">
+        <span style="width:40px">idx ${i}</span>
+        <span style="width:60px">PR ${pr.toFixed(4)}</span>${prBar}
+        <span style="width:60px">BR ${br.toFixed(4)}</span>${brBar}
+      </div>`;
+    }).join("")}`;
+}
+
+function renderAnomaly(d) {
+  const top = d.top_anomalies || [];
+  return `<div style="font-size:11px;color:var(--muted);margin-bottom:6px">🚨 Isolation Forest (threshold 0.6) · anomaly_count=${d.anomaly_count}/${d.total}</div>
+    ${top.map(i => {
+      const sc = (d.iforest || [])[i] || 0;
+      const lof = (d.lof || [])[i] || 0;
+      const isAnomaly = sc > 0.6;
+      return `<div style="display:flex;align-items:center;gap:10px;margin:3px 0;font-size:11px">
+        <span style="color:${isAnomaly?'var(--red)':'var(--green)'};font-weight:600">${isAnomaly?'⚠️':'✅'}</span>
+        <span style="width:40px">idx ${i}</span>
+        <span>IForest: <b style="color:${sc>0.6?'var(--red)':'var(--green)'}">${sc.toFixed(3)}</b></span>
+        <span>LOF: <b>${lof.toFixed(3)}</b></span>
+      </div>`;
+    }).join("")}`;
+}
+
+function renderPareto(d) {
+  const items = d.pareto_front || [];
+  let html = `<div style="font-size:11px;color:var(--muted);margin-bottom:6px">💰 Pareto 定价前沿 (${items.length} 点 · 利润 × 预算)</div>`;
+  html += `<div style="display:flex;gap:8px;margin-bottom:6px">
+    <div style="flex:1;height:140px;background:var(--card2);border-radius:4px;position:relative;overflow:hidden">
+      <!-- 简易散点 -->
+      ${items.map((p, idx) => {
+        const x = (p.budget / Math.max(...items.map(i=>i.budget)) * 85 + 5).toFixed(1);
+        const y = (90 - p.profit / Math.max(...items.map(i=>i.profit)) * 85).toFixed(1);
+        return `<div style="position:absolute;left:${x}%;top:${y}%;width:10px;height:10px;background:#FF6B6B;border-radius:50%;transform:translate(-50%,-50%)" title="$${p.budget}, profit $${p.profit}"></div>`;
+      }).join("")}
+    </div>
+  </div>`;
+  items.forEach(p => {
+    html += `<div style="font-size:11px;margin:2px 0">💡 <b>${p.title}</b> → 报价 $${Math.round(p.profit/0.3)} (利润 $${Math.round(p.profit)})</div>`;
+  });
+  return html;
+}
+
+function renderBayesian(d) {
+  const kw = d.top_keywords || [];
+  let html = `<div style="font-size:11px;color:var(--muted);margin-bottom:6px">📊 贝叶斯关键词权重 (后验均值 × CI95)</div>`;
+  kw.forEach(k => {
+    const barLen = (k.posterior_mean * 100).toFixed(0);
+    const ciW = Math.max(1, (k.ci95_high - k.ci95_low) * 100).toFixed(0);
+    const color = k.posterior_mean > 0.8 ? "#4ECB71" : k.posterior_mean > 0.6 ? "#FFB454" : "#888";
+    html += `<div style="display:flex;align-items:center;gap:8px;margin:3px 0;font-size:11px">
+      <code style="min-width:100px;background:var(--card2);padding:1px 8px;border-radius:3px">${k.kw}</code>
+      <span style="width:50px;color:${color}">${k.posterior_mean.toFixed(2)}</span>
+      <div style="width:120px;height:8px;background:var(--card2);border-radius:2px;position:relative">
+        <div style="position:absolute;left:${(k.ci95_low*100).toFixed(0)}%;width:${ciW}%;height:100%;background:${color}44;border-radius:2px"></div>
+        <div style="position:absolute;left:${barLen}%;width:2px;height:100%;background:${color}"></div>
+      </div>
+      <span style="color:var(--muted);font-size:10px">exp=${k.exposure} z=${k.z_score.toFixed(2)}</span>
+    </div>`;
+  });
+  return html;
 }
 
 // ===== HAK v2.0 Skills =====
@@ -1647,6 +1859,86 @@ async function loadIfEmpty(id) {
     "sales-funnel": loadFunnel, "exoskeleton": loadExo, "procurement": loadProcurement,
   };
   (fns[id] || (() => { document.getElementById(id+"-content")?.insertAdjacentHTML("beforeend","<p>加载中</p>"); }))();
+}
+
+// ===== HAK v2.0 Scenarios =====
+async function loadHwScenarios() {
+  const data = await fetchJSON("/api/hardware/scenarios") || {};
+  const scenarios = data.scenarios || [];
+  document.getElementById("hw-scenarios-count").textContent =
+    `${scenarios.length} 场景 · ${scenarios.reduce((s,x)=>s+x.available_count,0)} 可用 skills`;
+
+  const grid = document.getElementById("hw-scenarios-grid");
+  grid.innerHTML = scenarios.map(sc => {
+    const availPct = sc.preferred_count > 0
+      ? Math.round(sc.available_count / sc.preferred_count * 100) : 0;
+    const rate = Object.entries(sc.data_rate_hz || {}).map(([k,v]) => `${k}=${v}Hz`).join(", ");
+    const skills = sc.available_skills || [];
+    return `<div style="background:var(--card2);border:1px solid var(--border);border-radius:8px;padding:14px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+        <div style="font-weight:600;font-size:14px">🎬 ${sc.scenario}</div>
+        <div style="font-size:11px;color:var(--${availPct>=70?'green':availPct>=40?'amber':'red'})">
+          ${sc.available_count}/${sc.preferred_count}
+        </div>
+      </div>
+      <div style="font-size:11px;color:var(--muted);margin-bottom:8px">${sc.description}</div>
+      <div style="font-size:11px;color:var(--blue);margin-bottom:6px">📊 data_rate: ${rate || "default"}</div>
+      <div style="font-size:10px;color:var(--muted);margin-bottom:10px">
+        ${skills.slice(0,4).join(", ")}${skills.length>4?"...":""}
+      </div>
+      <div style="display:flex;gap:6px">
+        <button class="btn" style="padding:4px 10px;font-size:11px;flex:1"
+          onclick="runScenarioDemo('${sc.scenario}')">▶ DEMO</button>
+        <button class="btn btn-ghost" style="padding:4px 10px;font-size:11px;flex:1"
+          onclick="runScenarioCompose('${sc.scenario}')">🔧 COMPOSE</button>
+        <button class="btn btn-ghost" style="padding:4px 10px;font-size:11px;flex:1"
+          onclick="runScenarioOrch('${sc.scenario}')">⚡ ORCH</button>
+      </div>
+      <div id="scenario-result-${sc.scenario}" style="margin-top:10px"></div>
+    </div>`;
+  }).join("");
+}
+
+async function runScenarioDemo(scenario) {
+  const box = document.getElementById(`scenario-result-${scenario}`);
+  box.innerHTML = `<div style="color:var(--muted);font-size:11px">⏳ Demo ${scenario}...</div>`;
+  const data = await fetchJSON(`/api/hardware/skills/demo?scenario=${scenario}&samples=5`);
+  if (!data || !data.ok) { box.innerHTML = `<div style="color:var(--red);font-size:11px">❌ ${data?.error || "fail"}</div>`; return; }
+  const skills = data.skills || {};
+  const names = Object.keys(skills);
+  box.innerHTML = `<div style="font-size:11px;color:var(--green);line-height:1.6">
+    ✅ Demo OK · ${names.length} skills · samples=${data.samples}
+    <div style="margin-top:4px;color:var(--muted);font-family:monospace">
+      ${names.slice(0,6).join(", ")}${names.length>6?"...":""}
+    </div></div>`;
+}
+
+async function runScenarioCompose(scenario) {
+  const box = document.getElementById(`scenario-result-${scenario}`);
+  box.innerHTML = `<div style="color:var(--muted);font-size:11px">⏳ Compose ${scenario}...</div>`;
+  const data = await fetchJSON(`/api/hardware/skills/compose?scenario=${scenario}`);
+  if (!data || !data.ok) { box.innerHTML = `<div style="color:var(--red);font-size:11px">❌ ${data?.error || "fail"}</div>`; return; }
+  const skills = data.skills || [];
+  const plan = data.collection_plan || [];
+  box.innerHTML = `<div style="font-size:11px;color:var(--blue);line-height:1.6">
+    ✅ Compose · ${data.strategy || "task"} · ${skills.length} skills
+    <div style="margin-top:4px;color:var(--muted)">${skills.map(s=>s.skill).join(" → ")}</div>
+    <div style="margin-top:4px;color:var(--amber)">
+      ⏱ ${plan.slice(0,3).map(p=>p.rate_hz+"Hz").join(" / ")}
+    </div></div>`;
+}
+
+async function runScenarioOrch(scenario) {
+  const box = document.getElementById(`scenario-result-${scenario}`);
+  box.innerHTML = `<div style="color:var(--muted);font-size:11px">⏳ Orchestrate ${scenario}...</div>`;
+  const data = await fetchJSON(`/api/hardware/orchestrate?scenario=${scenario}`);
+  if (!data || !data.ok) { box.innerHTML = `<div style="color:var(--red);font-size:11px">❌ ${data?.error || "fail"}</div>`; return; }
+  const plan = data.orchestrated_plan || [];
+  box.innerHTML = `<div style="font-size:11px;color:var(--purple);line-height:1.6">
+    ⚡ Orchestrate OK · ${plan.length} skills with pipeline
+    <div style="margin-top:4px;color:var(--muted)">
+      ${plan.map(p=>p.skill+":"+p.actions.join("→")).join("<br>")}
+    </div></div>`;
 }
 </script>
 </body>
