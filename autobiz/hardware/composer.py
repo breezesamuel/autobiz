@@ -90,6 +90,12 @@ class Pipeline:
     def add_step(self, skill: str, cap: str, op: str = "read",
                  value: Any = None, transform: Callable | None = None,
                  depends_on: list[str] | None = None, step_id: str = "") -> PipelineStep:
+        existing_ids = {s.step_id for s in self.steps}
+        for dep in (depends_on or []):
+            if dep not in existing_ids:
+                raise ValueError(
+                    f"depends_on={dep!r} — step_id not found in pipeline. "
+                    f"Existing step_ids: {sorted(existing_ids)}")
         s = PipelineStep(skill=skill, capability=cap, op=op, value=value,
                          transform=transform, depends_on=depends_on or [],
                          step_id=step_id)
