@@ -1384,7 +1384,7 @@ class Handler(BaseHTTPRequestHandler):
                 self._json({"ok": False, "error": str(e)}, 500)
             return
 
-        m = re.match(r"^/api/hardware/skills/([a-z_]+)$", path)
+        m = re.match(r"^/api/hardware/skills/(?!demo|search|compose|orchestrate|plan)([a-z0-9_]+)$", path)
         if m:
             """单个 skill 详情 + live reads + simulate."""
             try:
@@ -1986,7 +1986,7 @@ class Handler(BaseHTTPRequestHandler):
 
     def do_DELETE(self) -> None:
         u = urlparse(self.path)
-        m = re.match(r"^/api/hardware/skills/([a-z_]+)$", u.path)
+        m = re.match(r"^/api/hardware/skills/(?!demo|search|compose|orchestrate|plan)([a-z0-9_]+)$", u.path)
         if m:
             """DELETE: 注销运行时注册的自定义 skill."""
             try:
