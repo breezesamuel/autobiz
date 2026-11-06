@@ -199,13 +199,14 @@ class Trigger:
 
     def __init__(self, watch_skill: str, watch_cap: str,
                  action_skill: str, action_cap: str, action_op: str = "exec",
-                 level: str = "warn"):
+                 level: str = "warn", action_value: Any = None):
         self.watch_skill = watch_skill
         self.watch_cap = watch_cap
         self.action_skill = action_skill
         self.action_cap = action_cap
         self.action_op = action_op
         self.level = level  # "warn" | "crit"
+        self.action_value = action_value  # write action 时的值
 
     def threshold(self) -> dict[str, float]:
         """基于 capability range 计算双向 warn/crit 阈值.
@@ -262,10 +263,13 @@ class Trigger:
                 if self.action_op == "exec":
                     ok = art.execute(self.action_cap)
                 elif self.action_op == "write":
-                    ok = art.write(self.action_cap, 1)
+                    # 用 Trigger.action_value (Composer 创建时传入), 默认 0
+                    val = self.action_value if self.action_value is not None else 0
+                    ok = art.write(self.action_cap, val)
                 else:
                     ok = True
                 result["action"] = f"{self.action_op} {self.action_skill}.{self.action_cap}"
+                result["action_value"] = self.action_value if self.action_op == "write" else None
                 result["action_ok"] = ok
             except Exception as e:
                 result["action_error"] = str(e)[:80]
@@ -325,14 +329,28 @@ class Composer:
                         pipeline.add_step(m["skill"], cap["name"], "read",
                                           step_id=f"sense.{m['skill']}.{cap['name']}")
             # 对每个 sensor→actuator 加 trigger
-            for s, a in zip(sensors, actuators):
+            for s in sensors:
                 srt = eng.get(s["skill"])
-                art = eng.get(a["skill"])
                 scap = next((c for c in srt.capabilities if c["type"] == "read"), None)
-                acap = next((c for c in art.capabilities if c["type"] == "exec"), None)
-                if scap and acap:
-                    triggers.append(Trigger(s["skill"], scap["name"],
-                                           a["skill"], acap["name"], "exec", "warn"))
+                if not scap: continue
+                for a in actuators:
+                    art = eng.get(a["skill"])
+                    # 优先 exec capability, 其次 write/rw (设为最小值作为刹车)
+                    acap = None; action_op = "exec"; action_value = None
+                    for c in art.capabilities:
+                        if c["type"] == "exec":
+                            acap = c; action_op = "exec"; break
+                    if not acap:
+                        for c in art.capabilities:
+                            if c["type"] in ("write", "rw"):
+                                acap = c; action_op = "write"
+                                rng = c.get("range")
+                                action_value = rng[0] if rng else 0
+                                break
+                    if acap:
+                        triggers.append(Trigger(s["skill"], scap["name"],
+                                               a["skill"], acap["name"], action_op, "crit",
+                                               action_value=action_value))
             plan_info["type"] = "safety_trigger"
 
         # ---- 默认: 多 class 组合 ----
@@ -344,8 +362,18 @@ class Composer:
                 seen_classes.add(cls)
                 rt = eng.get(m["skill"])
                 for cap in rt.capabilities[:2]:
-                    pipeline.add_step(m["skill"], cap["name"],
-                                      cap.get("type", "read"),
+                    # capability type → Pipeline op 映射:
+                    #   read/rw/notify → read (Pipeline 只认 read/write/exec)
+                    #   write          → write
+                    #   exec           → exec
+                    cap_type = cap.get("type", "read")
+                    if cap_type in ("read", "rw", "notify"):
+                        op = "read"
+                    elif cap_type == "write":
+                        op = "write"
+                    else:
+                        op = "exec"
+                    pipeline.add_step(m["skill"], cap["name"], op,
                                       step_id=f"multi.{m['skill']}.{cap['name']}")
                 if len(seen_classes) >= 4: break
             plan_info["type"] = "multi_class_default"

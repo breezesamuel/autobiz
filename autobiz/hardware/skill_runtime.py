@@ -165,6 +165,47 @@ class SkillRuntime:
 
 # ========== 引擎: 加载全部 skills ==========
 
+# ========== 场景路由 ==========
+
+# 每个 device_class 对应一组场景关键词 — compose_task 先按场景路由
+# 这解决了 "patient monitoring" 被错误匹配到 smart_home 的问题
+SCENARIO_CLASS_MAP: dict[str, list[str]] = {
+    # 场景关键词 (小写) → device_class 列表
+    "patient":      ["medical", "sensor"],
+    "hospital":     ["medical", "sensor"],
+    "medical":      ["medical", "sensor"],
+    "clinic":       ["medical"],
+    "health":       ["medical", "sensor"],
+    "monitor":      ["sensor", "medical", "energy"],
+    "监控":          ["sensor", "medical", "energy"],
+    "安全":          ["sensor", "actuator", "smart_home"],
+    "汽车":          ["vehicle", "sensor", "energy"],
+    "vehicle":      ["vehicle", "energy"],
+    "car":          ["vehicle", "energy"],
+    "ev":           ["vehicle", "energy"],
+    "home":         ["smart_home", "actuator", "sensor"],
+    "smart":        ["smart_home", "gateway"],
+    "factory":      ["industrial", "actuator", "sensor"],
+    "industrial":   ["industrial", "actuator", "sensor"],
+    "产线":          ["industrial", "actuator"],
+    "robot":        ["robot", "actuator"],
+    "机械臂":        ["robot"],
+    "arm":          ["robot"],
+    "exoskeleton":  ["exoskeleton", "sensor"],
+    "industrial iot": ["industrial", "gateway", "sensor"],
+    "iot":          ["gateway", "sensor", "smart_home"],
+    "energy":       ["energy", "sensor"],
+    "power":        ["energy", "sensor", "actuator"],
+    "cooling":      ["actuator", "sensor"],
+    "heat":         ["actuator", "sensor"],
+    "cool":         ["actuator", "sensor"],
+    "safety":       ["sensor", "actuator", "smart_home"],
+    "inspection":   ["sensor", "camera_1080p"],
+    "agv":          ["robot", "vehicle"],
+    "drone":        ["robot", "sensor"],
+}
+
+
 class SkillEngine:
     """全部 120 skills 的运行时引擎."""
 
@@ -198,14 +239,16 @@ class SkillEngine:
             raw = ALL_SKILLS[name]
             caps = [c["name"] for c in raw["capabilities"]]
             class_match = raw["device_class"]
-            # 精确匹配 + fuzzy 关键词包含
+            # 精确匹配 + fuzzy 关键词包含 (只允许 keyword 包含在 capability 名里, 禁止反向)
+            # 防止 "on" in "monitoring" 这种子串误匹配
             score = 0
             matched_caps = []
             for c in caps:
                 cl = c.lower()
                 if cl == kw:
                     score += 100; matched_caps.append(c)
-                elif kw in cl or cl in kw:
+                elif kw in cl and len(kw) >= 4:
+                    # keyword 作为 capability 的子串 (kw 至少 4 字符防误匹配)
                     score += 30; matched_caps.append(c)
             if class_match == kw:
                 score += 80
@@ -221,33 +264,61 @@ class SkillEngine:
         return results
 
     def find_by_task(self, task: str) -> list[dict[str, Any]]:
-        """按自然语言任务描述找合适的 skill (多关键词打分).
+        """按自然语言任务描述找合适的 skill (场景路由优先 + capability 打分).
 
-        支持:
-          - 英文: 空格分词 + len>2
-          - 中文/CJK: 连续 2-3 字 n-gram (不依赖空格)
-          - 混合: 先按空格切, 每段再提取 n-gram
+        流程:
+          1. 场景路由 — 先看 task 里的词匹配哪个 SCENARIO_CLASS_MAP key
+          2. 拿到目标 device_class 白名单
+          3. 在白名单内做 capability fuzzy 匹配打分
+          4. 没命中任何场景 → 回退到全量 capability 匹配
         """
+        task_lower = task.lower()
+        target_classes: set[str] = set()
+
+        # Step 1: 场景路由
+        for scenario_kw, classes in SCENARIO_CLASS_MAP.items():
+            if scenario_kw in task_lower:
+                target_classes.update(classes)
+
+        # Step 2: 生成 capability 关键词
         keywords = []
-        for seg in task.lower().split():
-            # 短英文词 (len>2) 或 纯符号串直接收
+        for seg in task_lower.split():
             if len(seg) > 2 and any('a' <= c <= 'z' for c in seg):
                 keywords.append(seg)
-            # CJK n-gram: 从每个字符位置向后取 2 和 3 字
             for n in (2, 3):
                 for i in range(len(seg) - n + 1):
                     gram = seg[i:i+n]
-                    # 跳过纯标点/空格 gram
                     if gram.strip() and any('\u4e00' <= c <= '\u9fff' for c in gram):
                         keywords.append(gram)
-        # 去重 + 限长 (最多 30 keywords)
         keywords = list(dict.fromkeys(keywords))[:30]
+
+        # Step 3: 打分 — 在 target_classes 白名单内, 或无白名单时全量
         scores: Counter[str] = Counter()
         matched_caps_map: dict[str, list[str]] = {}
-        for kw in keywords:
-            for m in self.find_by_capability(kw, fuzzy=True):
-                scores[m["skill"]] += m["score"]
-                matched_caps_map.setdefault(m["skill"], []).extend(m["matched_caps"])
+        for name in SKILL_NAMES:
+            raw = ALL_SKILLS[name]
+            cls = raw["device_class"]
+            # 白名单过滤 — 只挑场景匹配的 class
+            if target_classes and cls not in target_classes:
+                continue
+            # class 匹配加分
+            score = 0
+            if cls in target_classes:
+                score += 50  # 场景命中的 class 给基础分
+            # capability fuzzy
+            for c in raw["capabilities"]:
+                cl = c["name"].lower()
+                for kw in keywords:
+                    if cl == kw:
+                        score += 100
+                        matched_caps_map.setdefault(name, []).append(c["name"])
+                    elif kw in cl and len(kw) >= 4:
+                        score += 30
+                        matched_caps_map.setdefault(name, []).append(c["name"])
+            if score > 0:
+                scores[name] += score
+
+        # Step 4: 结果 — 按分数排序, top 20
         results = []
         for name, score in scores.most_common(20):
             raw = ALL_SKILLS[name]
@@ -257,6 +328,22 @@ class SkillEngine:
                 "score": score,
                 "matched_caps": list(set(matched_caps_map.get(name, []))),
             })
+
+        # 如果场景路由没找到任何结果, 回退到全量 capability 匹配
+        if not results and target_classes:
+            for kw in keywords:
+                for m in self.find_by_capability(kw, fuzzy=True):
+                    scores[m["skill"]] += m["score"]
+                    matched_caps_map.setdefault(m["skill"], []).extend(m["matched_caps"])
+            for name, score in scores.most_common(20):
+                raw = ALL_SKILLS[name]
+                results.append({
+                    "skill": name,
+                    "device_class": raw["device_class"],
+                    "score": score,
+                    "matched_caps": list(set(matched_caps_map.get(name, []))),
+                })
+
         return results
 
     # ---- Skill 组合 ----
