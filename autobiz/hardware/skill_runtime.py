@@ -184,6 +184,8 @@ class SkillEngine:
     def find_by_capability(self, keyword: str, fuzzy: bool = True) -> list[dict[str, Any]]:
         """按 capability 关键词找匹配的 skills."""
         kw = keyword.lower().strip()
+        if not kw:
+            return []
         results = []
         for name in SKILL_NAMES:
             raw = ALL_SKILLS[name]
@@ -212,8 +214,27 @@ class SkillEngine:
         return results
 
     def find_by_task(self, task: str) -> list[dict[str, Any]]:
-        """按自然语言任务描述找合适的 skill (多关键词打分)."""
-        keywords = [w for w in task.lower().split() if len(w) > 2]
+        """按自然语言任务描述找合适的 skill (多关键词打分).
+
+        支持:
+          - 英文: 空格分词 + len>2
+          - 中文/CJK: 连续 2-3 字 n-gram (不依赖空格)
+          - 混合: 先按空格切, 每段再提取 n-gram
+        """
+        keywords = []
+        for seg in task.lower().split():
+            # 短英文词 (len>2) 或 纯符号串直接收
+            if len(seg) > 2 and any('a' <= c <= 'z' for c in seg):
+                keywords.append(seg)
+            # CJK n-gram: 从每个字符位置向后取 2 和 3 字
+            for n in (2, 3):
+                for i in range(len(seg) - n + 1):
+                    gram = seg[i:i+n]
+                    # 跳过纯标点/空格 gram
+                    if gram.strip() and any('\u4e00' <= c <= '\u9fff' for c in gram):
+                        keywords.append(gram)
+        # 去重 + 限长 (最多 30 keywords)
+        keywords = list(dict.fromkeys(keywords))[:30]
         scores: Counter[str] = Counter()
         matched_caps_map: dict[str, list[str]] = {}
         for kw in keywords:
