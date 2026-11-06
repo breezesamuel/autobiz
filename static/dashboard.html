@@ -274,6 +274,32 @@ tbody tr:last-child td { border-bottom: none; }
         </div>
       </div>
 
+      <!-- HAK v2.0 Kernel — 真实硬件发现接管 -->
+      <div class="section" style="margin-top:16px">
+        <div class="section-header">⚡ HAK v2.0 Kernel · 真实硬件发现接管
+          <span class="tag" id="hw-kernel-stats">idle</span>
+        </div>
+        <div class="section-body">
+          <!-- 工具栏 -->
+          <div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap">
+            <button class="btn" onclick="hwKernelDiscover()">🔍 发现硬件</button>
+            <button class="btn" onclick="hwKernelConnect()">🔌 发现 + 全部接管</button>
+            <button class="btn btn-ghost" onclick="hwKernelRefresh()">🔄 刷新</button>
+            <button class="btn btn-ghost" onclick="hwKernelClear()">🧹 清空</button>
+            <span style="flex:1"></span>
+            <span style="font-size:12px;color:var(--muted)" id="hw-kernel-summary">
+              端点 0 · 已接管 0 · 命令 0 · 失败 0
+            </span>
+          </div>
+
+          <!-- Endpoints 列表 -->
+          <div id="hw-kernel-endpoints" style="margin-bottom:14px"></div>
+
+          <!-- 已接管设备列表 -->
+          <div id="hw-kernel-devices"></div>
+        </div>
+      </div>
+
       <!-- Skill 详情 Modal -->
       <div id="hw-skill-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:9999;align-items:center;justify-content:center" onclick="if(event.target.id==='hw-skill-modal')document.getElementById('hw-skill-modal').style.display='none'">
         <div style="background:var(--card);border:1px solid var(--border);border-radius:10px;max-width:560px;width:90%;max-height:80vh;overflow-y:auto;padding:24px">
@@ -737,6 +763,191 @@ async function loadHardware() {
     window._hwSkillsLoaded = true;
     loadHwSkills();
     loadHwCustomList();
+  }
+  // 刷新 kernel 状态（如果有已接管设备）
+  hwKernelRefresh();
+}
+
+// ===== HAK v2.0 Kernel — 真实硬件发现接管 =====
+
+async function hwKernelDiscover() {
+  const box = document.getElementById("hw-kernel-endpoints");
+  box.innerHTML = `<div style="color:var(--muted);padding:20px;text-align:center">🔍 正在枚举硬件端点...</div>`;
+
+  const d = await fetchJSON("/api/hardware/discover");
+  if (!d || !d.ok) { box.innerHTML = `<div style="color:var(--red)">发现失败: ${d?.error || "unknown"}</div>`; return; }
+
+  const eps = d.endpoints || [];
+  const kindTags = { serial: ["COM", "blue"], usb: ["USB", "green"], hid: ["HID", "green"], tcp: ["TCP", "amber"], modbus: ["MB", "amber"], opcua: ["OPC", "amber"], mqtt: ["MQTT", "amber"], mock: ["MOCK", "gray"] };
+
+  const rows = eps.map((e, i) => {
+    const [klabel, kcolor] = kindTags[e.kind] || [e.kind, "gray"];
+    const vidpid = e.vid || e.pid ? `VID=${e.vid || "-"} PID=${e.pid || "-"}` : "";
+    return `<div style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--card2);border-radius:6px;margin-bottom:6px">
+      ${tag(klabel, kcolor)}
+      <code style="font-size:11px;color:var(--muted)">${safe(e.address)}</code>
+      ${vidpid ? `<span style="font-size:11px;color:var(--muted)">${vidpid}</span>` : ""}
+      <span style="font-size:12px;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${safe(e.name || "")}</span>
+      <button class="btn btn-ghost" style="padding:4px 10px;font-size:12px" onclick="hwKernelConnectOne(${i})">接管</button>
+    </div>`;
+  }).join("");
+
+  box.innerHTML = rows
+    ? `<div style="margin-bottom:6px;font-size:12px;color:var(--muted)">发现 ${eps.length} 个端点 · Serial ${d.serial_count || 0} · USB/HID ${d.usb_count || 0} · TCP ${d.tcp_count || 0}</div>${rows}`
+    : `<div style="color:var(--muted);padding:20px;text-align:center">未发现任何硬件端点 (插 USB-UART 桥可获得 COMx)</div>`;
+
+  window._hwEps = eps;
+  hwKernelRefresh();
+}
+
+async function hwKernelConnect() {
+  const box = document.getElementById("hw-kernel-devices");
+  box.innerHTML = `<div style="color:var(--muted);padding:20px;text-align:center">🔌 发现 + 全部接管...</div>`;
+
+  // 先 discover (让 endpoints 列表也更新)
+  await hwKernelDiscover();
+
+  const resp = await fetch("/api/hardware/kernel", { method: "POST" });
+  const d = await resp.json();
+  if (!d.ok) { box.innerHTML = `<div style="color:var(--red)">接管失败: ${d.error || "unknown"}</div>`; return; }
+
+  const devs = d.connected_devices || [];
+  renderKernelDevices(devs);
+  updateKernelSummary({ ...d.kernel_stats, endpoints_found: d.endpoints_found, simulated: d.simulated });
+}
+
+async function hwKernelConnectOne(idx) {
+  // 单个端点接管 — 用 discover + connect 完整链路
+  await hwKernelConnect();
+}
+
+async function hwKernelRefresh() {
+  const d = await fetchJSON("/api/hardware/kernel");
+  if (!d || !d.ok) { updateKernelSummary(); document.getElementById("hw-kernel-devices").innerHTML = ""; return; }
+
+  const devs = (d.devices || []).map(x => ({
+    sn: x.sn, device_class: x.device_class, caps_count: x.caps, learning_factor: x.learning_factor
+  }));
+  // 需要完整 descriptor 才能渲染 controls — 用 skills endpoint 拿
+  renderKernelDevices(devs);
+  updateKernelSummary(d);
+}
+
+async function hwKernelClear() {
+  // Kernel 单例会持久化 connected 状态。最干净的方式是刷新页面 (或重启 dashboard)。
+  document.getElementById("hw-kernel-devices").innerHTML =
+    `<div style="color:var(--muted);padding:20px;text-align:center">Kernel 状态在当前进程存活。重启 dashboard 清空, 或重新 discover→connect 覆盖。</div>`;
+  updateKernelSummary({ connects: 0, commands: 0, failures: 0, connected: 0 });
+}
+
+function renderKernelDevices(devs) {
+  const box = document.getElementById("hw-kernel-devices");
+  if (!devs || devs.length === 0) {
+    box.innerHTML = `<div style="color:var(--muted);padding:20px;text-align:center">暂无已接管设备 · 点击 "🔌 发现 + 全部接管"</div>`;
+    return;
+  }
+  box.innerHTML = devs.map(dev => {
+    const clsTag = tag(dev.device_class || "?", dev.device_class === "sensor" ? "blue" : dev.device_class === "actuator" ? "amber" : "gray");
+    const lf = dev.learning_factor ?? 0;
+    const lfColor = lf > 0.3 ? "red" : lf > 0 ? "amber" : "green";
+    return `<div style="padding:12px;background:var(--card2);border-radius:6px;margin-bottom:8px">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;flex-wrap:wrap">
+        <code style="font-size:12px;font-weight:600">${safe(dev.sn)}</code>
+        ${clsTag}
+        <span style="font-size:11px;color:var(--muted)">caps=${dev.caps_count || 0}</span>
+        <span style="font-size:11px;color:var(--${lfColor})">factor=${lf.toFixed(3)}</span>
+        <button class="btn btn-ghost" style="padding:2px 8px;font-size:11px" onclick="hwKernelDeviceCmds('${dev.sn}')">📟 控制</button>
+      </div>
+      <div id="hw-cmds-${dev.sn}" style="display:none"></div>
+    </div>`;
+  }).join("");
+}
+
+async function hwKernelDeviceCmds(sn) {
+  const boxId = `hw-cmds-${sn}`;
+  const box = document.getElementById(boxId);
+  if (!box) return;
+  if (box.style.display !== "none") { box.style.display = "none"; return; }
+
+  // 先拿完整 descriptor (从 skills 或直接从 kernel command 推断)
+  // 用 skills endpoint 查 class 然后构造默认 caps — 简化起见, 用通用 caps
+  const resp = await fetch(`/api/hardware/kernel/${encodeURIComponent(sn)}/read/temperature`);
+  const probe = await resp.json().catch(() => ({}));
+  const hasTemp = probe.ok;
+
+  const controls = [
+    { name: "temperature", type: "read" },
+    { name: "humidity",    type: "read" },
+    { name: "intensity",   type: "write" },
+    { name: "relay",       type: "write" },
+    { name: "led",         type: "write" },
+  ];
+
+  box.style.display = "block";
+  box.innerHTML = `<div style="font-size:12px;color:var(--muted);margin-bottom:8px">统一语义命令 · Kernel.command(sn, cap)</div>` +
+    controls.map(c => {
+      if (c.type === "read") {
+        return `<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+          <span style="width:100px;font-size:12px">${c.name}</span>
+          <button class="btn btn-ghost" style="padding:3px 10px;font-size:11px"
+            onclick="hwKernelCmd('${sn}','${c.name}','read',null,this)">READ</button>
+          <span class="hw-cmd-res" style="font-size:12px;color:var(--blue)"></span>
+        </div>`;
+      } else {
+        return `<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+          <span style="width:100px;font-size:12px">${c.name}</span>
+          <input class="hw-cmd-val" style="width:80px;padding:3px 8px;background:var(--card);color:var(--text);border:1px solid var(--border);border-radius:4px;font-size:11px"
+            placeholder="0.5" value="0.5">
+          <button class="btn btn-ghost" style="padding:3px 10px;font-size:11px"
+            onclick="hwKernelCmd('${sn}','${c.name}','write',this)">WRITE</button>
+          <span class="hw-cmd-res" style="font-size:12px"></span>
+        </div>`;
+      }
+    }).join("");
+}
+
+async function hwKernelCmd(sn, capName, ctype, btn) {
+  // btn 是被点击的元素; 找到同行的 res span
+  const row = btn.parentElement;
+  const resSpan = row.querySelector(".hw-cmd-res");
+  const valInput = row.querySelector(".hw-cmd-val");
+  resSpan.style.color = "var(--muted)"; resSpan.textContent = "...";
+
+  let url = `/api/hardware/kernel/${encodeURIComponent(sn)}/${ctype}/${encodeURIComponent(capName)}`;
+  let resp;
+  if (ctype === "write") {
+    const v = valInput ? valInput.value : "0.5";
+    resp = await fetch(url + `?value=${encodeURIComponent(v)}`);
+  } else {
+    resp = await fetch(url);
+  }
+  const d = await resp.json();
+  if (d.ok) {
+    resSpan.style.color = "var(--green)";
+    resSpan.textContent = `${d.response || d.bytecode || "OK"} · ${d.latency_ms || "?"}ms`;
+  } else {
+    resSpan.style.color = "var(--red)";
+    resSpan.textContent = `❌ ${d.error || "fail"}`;
+  }
+}
+
+function updateKernelSummary(st) {
+  if (!st) st = {};
+  const parts = [
+    `端点 ${st.endpoints_found ?? "-"}`,
+    `已接管 ${st.simulated ?? st.connects ?? 0}`,
+    `命令 ${st.commands ?? 0}`,
+    `<span style="color:${(st.failures ?? 0) > 0 ? "var(--red)" : "var(--muted)"}">失败 ${st.failures ?? 0}</span>`,
+  ];
+  document.getElementById("hw-kernel-summary").innerHTML = parts.join(" · ");
+
+  const tagEl = document.getElementById("hw-kernel-stats");
+  if (st.simulated || st.connects > 0) {
+    tagEl.textContent = `${st.simulated ?? st.connects} 设备在线`;
+    tagEl.style.color = "var(--green)";
+  } else {
+    tagEl.textContent = "idle";
+    tagEl.style.color = "";
   }
 }
 
