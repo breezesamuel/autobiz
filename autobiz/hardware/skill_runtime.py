@@ -1,15 +1,9 @@
-"""skill_runtime — 让 120 HAK skills 变成可执行 agent。
+"""skill_runtime — 让 120 HAK skills 变成可执行 runtime agent.
 
-每个 skill 有:
-  1. descriptor (hds_library.json) — 静态能力声明
-  2. MockTransport — 产生真实数据 (READ temperature → 23.5°C)
-  3. execute() — 高层 API, 给业务层用
-  4. simulate(sample_seconds=10) — 时间序列模拟
+核心目标: 硬件全自动接入 — 发现 → 握手 → 注册 → 读写控制 → 数据上报
 
-运行时引擎:
-  skill_engine — 加载全部 120 skills, 提供 search/execute/simulate
-  capability_matcher — "需要什么"→"哪些 skill 能做"
-  skill_composer — 多 skill 组合成复合系统
+DataBus (本模块内置): 所有 skill 的 MockTransport 共享同一个状态空间,
+                     写 A 会被 B 读到, 不再是 120 个各自独立的模拟器.
 """
 from __future__ import annotations
 
@@ -31,6 +25,68 @@ from .skills_library import (
 _HDS_PATH = Path(__file__).parent / "hds_library.json"
 
 
+# ============= DataBus — 所有 skill 共享的状态空间 =============
+
+class DataBus:
+    """线程安全的 pub/sub + key-value 状态总线.
+
+    - set(key, val) — 写值, 通知所有订阅者
+    - get(key) → val — 读值, 没写过返回 None
+    - subscribe(key_prefix, callback) — 订阅变化
+    """
+    def __init__(self):
+        self._data: dict[str, Any] = {}
+        self._lock = threading.RLock()
+        self._subs: dict[str, list[callable]] = {}
+
+    def set(self, key: str, val: Any) -> None:
+        with self._lock:
+            self._data[key] = val
+            # 通知订阅者
+            subs = self._subs.get(key, [])
+        for cb in subs:
+            try: cb(key, val)
+            except Exception: pass
+
+    def get(self, key: str) -> Any | None:
+        with self._lock:
+            return self._data.get(key)
+
+    def has(self, key: str) -> bool:
+        with self._lock:
+            return key in self._data
+
+    def snapshot(self) -> dict[str, Any]:
+        with self._lock:
+            return dict(self._data)
+
+    def clear(self) -> None:
+        with self._lock:
+            self._data.clear()
+
+    def subscribe(self, key_prefix: str, callback) -> None:
+        """订阅以 key_prefix 开头的所有 key 变化."""
+        with self._lock:
+            self._subs.setdefault(key_prefix, []).append(callback)
+
+
+# 模块级全局单例 — 所有 MockTransport / SkillRuntime 共享这一个 bus
+_global_bus: DataBus | None = None
+_global_bus_lock = threading.Lock()
+
+def get_bus() -> DataBus:
+    global _global_bus
+    if _global_bus is None:
+        with _global_bus_lock:
+            if _global_bus is None:
+                _global_bus = DataBus()
+    return _global_bus
+
+def reset_bus() -> None:
+    global _global_bus
+    _global_bus = None
+
+
 class SkillRuntime:
     """一个 skill 的完整运行时: descriptor + transport + 执行 API.
 
@@ -43,11 +99,7 @@ class SkillRuntime:
         raw = ALL_SKILLS[skill_name]
         self.name = skill_name
         self.descriptor = validate(dict(raw))
-        # 延迟 import 解循环 (composer 也 import skill_runtime)
-        if bus is None:
-            from .composer import get_bus
-            bus = get_bus()
-        self._bus = bus
+        self._bus = bus if bus is not None else get_bus()
         self.transport = MockTransport(
             descriptor=self.descriptor,
             address=f"mock://hak-v2/{skill_name.lower()}",
