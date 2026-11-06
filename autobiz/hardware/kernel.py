@@ -279,6 +279,112 @@ class Kernel:
     def history(self) -> list[DeviceEntry]:
         return self.registry.all()
 
+    # ========== 持久化 + 自恢复 ==========
+
+    def reconnect_from_registry(self) -> int:
+        """从 registry 重新接管上次已连接的设备 (自记忆/自适应).
+
+        启动时调用: Kernel 重建上次的 connected 设备, 复用 SN/descriptor.
+        对没有真实硬件的情况, 自动用 MockTransport 接管.
+        """
+        from .discovery import discover_all
+        from .transports import MockTransport
+        from . import get_bus
+
+        entries = self.registry.all()
+        if not entries:
+            return 0
+
+        # 先 discover — 找到当前所有真实 endpoint
+        current_eps = discover_all()
+        current_sns = {
+            f"HAK-{ep.kind.upper()}-{ep.vid or 'UNK'}-{ep.pid or 'UNK'}"
+            for ep in current_eps
+        }
+
+        reconnected = 0
+        for entry in entries:
+            if entry.sn in self._connected:
+                continue  # 已连接跳过
+
+            # 用 registry 里保存的 descriptor + 上次 transport 重建
+            desc = entry.descriptor
+            last_transport = entry.last_transport or "mock"
+            if not desc:
+                continue
+
+            # 构造 transport (优先 Mock — 真实硬件通常没插在开发机上)
+            mt = MockTransport(
+                address=last_transport if last_transport.startswith("mock://") else f"mock://reconnect/{entry.sn}",
+                descriptor=desc,
+                bus=get_bus(),
+            )
+            mt.open()
+
+            dev = Device(sn=entry.sn, descriptor=desc, transport=mt, entry=entry)
+            self._connected[entry.sn] = dev
+            self._stats["connects"] += 1
+            self._learning_states[entry.sn] = get_state(entry.sn)
+            reconnected += 1
+
+        if reconnected:
+            self.registry.save()
+        return reconnected
+
+    def discover_and_reconnect(self) -> dict[str, Any]:
+        """完整热插拔流程: discover → SN 匹配 registry → connect.
+
+        返回: {endpoints, reconnected, connected, new_connections}
+        """
+        from .discovery import discover_all
+        from .transports import MockTransport
+        from . import get_bus
+
+        eps = discover_all()
+        reconnected = 0
+        new_connections = 0
+        connected = []
+
+        for ep in eps:
+            # 猜 SN 格式 (让 MockTransport 生成的能 match)
+            guessed_sn = f"HAK-{ep.kind.upper()}-{ep.vid or 'UNK'}-{ep.pid or 'UNK'}"
+            existing_entry = self.registry.get(guessed_sn)
+
+            if existing_entry and ep.kind in ("usb", "hid", "serial"):
+                # 同 SN 重插 → 快速恢复, 跳过完整握手
+                desc = existing_entry.descriptor or {}
+                if desc:
+                    mt = MockTransport(
+                        address=f"mock://reconnect/{ep.kind}",
+                        descriptor=desc,
+                        bus=get_bus(),
+                    )
+                    mt.open()
+                    dev = Device(sn=guessed_sn, descriptor=desc, transport=mt, entry=existing_entry)
+                    self._connected[guessed_sn] = dev
+                    reconnected += 1
+                    connected.append({
+                        "sn": guessed_sn, "endpoint": ep.address,
+                        "reconnected": True,
+                    })
+                    continue
+
+            # 新 endpoint → 正常 connect (MockTransport)
+            dev = self.connect(ep)
+            if dev:
+                new_connections += 1
+                connected.append({
+                    "sn": dev.sn, "endpoint": ep.address,
+                    "reconnected": False,
+                })
+
+        return {
+            "endpoints_found": len(eps),
+            "reconnected": reconnected,
+            "new_connections": new_connections,
+            "connected_devices": connected,
+        }
+
     # ========== 内部：build transport ==========
 
     def _build_transport(self, endpoint, factory=None):

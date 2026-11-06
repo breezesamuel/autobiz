@@ -1610,28 +1610,56 @@ class Handler(BaseHTTPRequestHandler):
                 self._json({"ok": False, "error": str(e)}, 500)
             return
 
+        # ========== HARDWARE SCENARIOS (7 大类预设场景) ==========
+        if path == "/api/hardware/scenarios":
+            """列出全部 7 个预设场景 + 可用 skills 列表."""
+            try:
+                from .hardware.skill_runtime import engine as _eng
+                eng = _eng()
+                qs = parse_qs(u.query)
+                detail = (qs.get("detail") or ["false"])[0].lower() == "true"
+                result = eng.list_scenarios()
+                if detail:
+                    # 加每个场景的完整 data_rate_hz + 实际 skills 数据
+                    for sc in result:
+                        sc["skills_detail"] = [
+                            {name: eng.get(name).capabilities}
+                            for name in sc["available_skills"][:3]
+                            if name in eng.skill_names
+                        ]
+                self._json({"ok": True, "scenarios": result,
+                            "total_scenarios": len(result),
+                            "tip": "use ?scenario=monitoring&task=radar for targeted compose"})
+            except Exception as e:
+                self._json({"ok": False, "error": str(e)}, 500)
+            return
+
         # ========== HARDWARE SKILL: demo (批量模拟) ==========
         if path == "/api/hardware/skills/demo":
-            """批量模拟演示全部 120+ skills 的 2s 数据."""
+            """批量模拟 skills — 支持 ?scenario=monitoring&samples=5."""
             try:
                 from .hardware.skill_runtime import engine as _eng
                 eng = _eng()
                 qs = parse_qs(u.query)
                 sec = float((qs.get("seconds") or ["2.0"])[0])
-                self._json(eng.demo(seconds=sec))
+                scenario = (qs.get("scenario") or [None])[0] or None
+                samples = int((qs.get("samples") or ["3"])[0])
+                self._json(eng.demo(seconds=sec, scenario=scenario, samples=samples))
             except Exception as e:
                 self._json({"ok": False, "error": str(e)}, 500)
             return
 
         # ========== HARDWARE SKILL: compose (自动组合) ==========
         if path == "/api/hardware/skills/compose":
-            """根据 task 关键词自动组合 skills."""
+            """自动组合 — 支持 ?task= 搜索 或 ?scenario= 预设."""
             try:
                 from .hardware.skill_runtime import engine as _eng
                 eng = _eng()
                 qs = parse_qs(u.query)
                 task = (qs.get("task") or ["monitoring"])[0].strip()
-                self._json(eng.compose(task))
+                scenario = (qs.get("scenario") or [None])[0] or None
+                include_read = (qs.get("read") or ["true"])[0].lower() != "false"
+                self._json(eng.compose(task, scenario=scenario, include_read=include_read))
             except Exception as e:
                 self._json({"ok": False, "error": str(e)}, 500)
             return
@@ -1686,20 +1714,22 @@ class Handler(BaseHTTPRequestHandler):
 
         # ========== HARDWARE: orchestrate (多 skill 任务编排) ==========
         if path == "/api/hardware/orchestrate":
-            """按 task 关键词 orchestrate — 组合 + 验证 + 返回执行计划."""
+            """orchestrate — 支持 ?scenario= 或 ?task= — 返回执行计划 + 数据采集策略."""
             try:
                 from .hardware.skill_runtime import engine as _eng
                 eng = _eng()
                 qs = parse_qs(u.query)
+                scenario = (qs.get("scenario") or [None])[0] or None
                 task = (qs.get("task") or ["monitoring"])[0].strip()
-                result = eng.compose(task)
+                # 有 scenario 优先用 scenario
+                result = eng.compose(task, scenario=scenario)
                 if result.get("ok"):
-                    # 给每个 skill 加 simulated plan
                     result["orchestrated_plan"] = [
                         {"skill": s["skill"], "device_class": s.get("device_class"),
                          "actions": ["read_sensors", "process_data", "report_bus"]}
                         for s in result.get("skills", [])
                     ]
+                    result["orchestrated"] = True
                 self._json(result)
             except Exception as e:
                 self._json({"ok": False, "error": str(e)}, 500)
@@ -1707,26 +1737,34 @@ class Handler(BaseHTTPRequestHandler):
 
         # ========== HARDWARE: plan (场景级规划) ==========
         if path == "/api/hardware/plan":
-            """返回硬件系统的场景级规划 — 支持 ?scenario=monitoring."""
+            """场景级规划 — 支持 ?scenario= 或 ?task= — 列全 7 场景 + 每个的 skills."""
             try:
                 from .hardware.skill_runtime import engine as _eng
                 eng = _eng()
                 qs = parse_qs(u.query)
-                scenario = (qs.get("scenario") or ["monitoring"])[0].strip()
-                compose_result = eng.compose(scenario)
+                scenario = (qs.get("scenario") or [None])[0] or None
+                task = (qs.get("task") or ["monitoring"])[0].strip()
                 classes = eng.list_by_class()
-                self._json({
-                    "ok": True, "scenario": scenario,
-                    "total_skills": eng.count(),
-                    "classes_available": sorted(classes.keys()),
-                    "plan": compose_result,
-                    "scenario_tips": {
-                        "monitoring": ["temperature_sensor", "imu_9axis", "radar_24ghz"],
-                        "robotics": ["servo_motor", "dc_motor", "mobile_base_diff"],
-                        "security": ["camera_1080p", "smart_lock_door", "radar_24ghz"],
-                        "medical": ["ecg_monitor", "infusion_pump"],
-                    },
-                })
+                # 如果指定 scenario → 生成场景级 compose
+                if scenario and scenario in eng.SCENARIOS:
+                    compose_result = eng.compose(task, scenario=scenario)
+                    self._json({
+                        "ok": True, "scenario": scenario,
+                        "total_skills": eng.count(),
+                        "classes_available": sorted(classes.keys()),
+                        "scenario_def": eng.SCENARIOS[scenario]["description"],
+                        "plan": compose_result,
+                        "all_scenarios": eng.list_scenarios(),
+                    })
+                else:
+                    # 不指定 scenario → 列全部 7 个场景
+                    self._json({
+                        "ok": True, "total_skills": eng.count(),
+                        "classes_available": sorted(classes.keys()),
+                        "classes_count": {cls: len(n) for cls, n in classes.items()},
+                        "all_scenarios": eng.list_scenarios(),
+                        "tip": "use ?scenario=monitoring for targeted plan",
+                    })
             except Exception as e:
                 self._json({"ok": False, "error": str(e)}, 500)
             return
