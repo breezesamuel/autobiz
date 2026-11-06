@@ -264,13 +264,11 @@ tbody tr:last-child td { border-bottom: none; }
             <div style="flex:1">
               <div style="margin-bottom:10px;font-size:13px;color:var(--muted)">📊 按 Class 分布</div>
               <div id="hw-skills-classes" style="display:grid;grid-template-columns:repeat(2,1fr);gap:6px"></div>
-              <div style="margin:16px 0 10px;font-size:13px;color:var(--muted)">🎯 Task → Skill Compose</div>
-              <div style="display:flex;gap:8px;margin-bottom:8px">
-                <input id="hw-compose-task" placeholder="如: patient monitoring, safety protection"
-                  style="flex:1;background:var(--card2);color:var(--text);border:1px solid var(--border);padding:6px 10px;border-radius:6px;font-size:12px">
-                <button class="btn" onclick="runHwCompose()">Compose</button>
+              <div style="margin:16px 0 10px;font-size:13px;color:var(--muted)">🎯 Task → Skill Compose <span style="color:var(--amber);font-size:11px">[已精简 · 核心聚焦硬件自动接入]</span></div>
+              <div style="font-size:11px;color:var(--muted);padding:8px;background:var(--card2);border-radius:6px">
+                Compose/Orchestration 已从 HAK v2.0 内核移除。<br>
+                核心流程: 发现→握手→注册→读写控制→健康管理。
               </div>
-              <div id="hw-compose-result" style="font-size:12px"></div>
             </div>
           </div>
         </div>
@@ -745,6 +743,7 @@ async function loadHardware() {
 // ===== HAK v2.0 Skills =====
 async function loadHwSkills() {
   const data = await fetchJSON("/api/hardware/skills") || {};
+  window._hwCache = data;  // 缓存用于前端本地搜索
   const total = data.total || 120;
   document.getElementById("hw-skills-count").textContent = total + " skills";
 
@@ -803,14 +802,26 @@ function renderSkillGrid(data, searchResults) {
   grid.innerHTML = html || `<div style="color:var(--muted);font-size:12px;padding:20px;text-align:center">加载失败</div>`;
 }
 
-async function searchHwSkill() {
-  const kw = (document.getElementById("hw-skill-search").value || "").trim();
+// 前端本地模糊搜索 (后端 /api/hardware/skills 已删, 改用本地 filter)
+function searchHwSkill() {
+  const kw = (document.getElementById("hw-skill-search").value || "").trim().toLowerCase();
   if (!kw) { loadHwSkills(); return; }
   if (window._hwSearchTimer) clearTimeout(window._hwSearchTimer);
-  window._hwSearchTimer = setTimeout(async () => {
-    const data = await fetchJSON(`/api/hardware/skills/search/${encodeURIComponent(kw)}`) || {};
-    renderSkillGrid(null, data.results || []);
-  }, 300);
+  window._hwSearchTimer = setTimeout(() => {
+    const cache = window._hwCache;
+    if (!cache) { loadHwSkills(); return; }
+    const bcn = cache.by_class_names || {};
+    const filtered = {};
+    Object.entries(bcn).forEach(([cls, names]) => {
+      const matched = names.filter(n => n.toLowerCase().includes(kw) || cls.toLowerCase().includes(kw));
+      if (matched.length > 0) filtered[cls] = matched;
+    });
+    if (Object.keys(filtered).length === 0) {
+      document.getElementById("hw-skills-grid").innerHTML = `<div style="color:var(--muted);font-size:12px;padding:20px;text-align:center">未找到匹配 "${safe(kw)}" 的 skill</div>`;
+      return;
+    }
+    renderSkillGrid({by_class_names: filtered});
+  }, 200);
 }
 
 async function showHwSkillDetail(name) {
@@ -851,32 +862,8 @@ async function showHwSkillDetail(name) {
 }
 
 async function runHwCompose() {
-  const task = (document.getElementById("hw-compose-task").value || "").trim();
-  if (!task) return;
-  const data = await fetchJSON(`/api/hardware/orchestrate?task=${encodeURIComponent(task)}`) || {};
-  const pipeline = data.pipeline || {};
-  const html = `
-    <div style="margin-bottom:8px">
-      <span style="font-size:11px;color:var(--muted)">plan_type: </span>
-      <span style="font-size:11px;font-weight:600;color:var(--blue)">${safe(data.plan_type || "")}</span>
-      <span style="font-size:11px;color:var(--muted);margin-left:8px">· skills: </span>
-      <span style="font-size:11px;font-weight:600">${(data.skills||[]).map(s=>safe(s)).join(", ")}</span>
-    </div>
-    <div style="font-size:11px;color:var(--muted);margin-bottom:6px">Pipeline steps: ${pipeline.steps_done || 0}</div>
-    <div style="background:var(--card2);padding:10px;border-radius:6px;max-height:160px;overflow-y:auto">
-      ${Object.entries(pipeline.results || {}).map(([k,v]) => {
-        const val = typeof v === "object" ? JSON.stringify(v) : v;
-        return `<div style="padding:3px 0;border-bottom:1px dashed var(--border);font-size:11px">
-          <span style="color:var(--muted)">${safe(k)}:</span> <span style="font-weight:600">${safe(String(val).slice(0,60))}</span></div>`;
-      }).join("")}
-    </div>
-    ${data.triggers && data.triggers.length > 0 ? `
-    <div style="font-size:11px;color:var(--muted);margin-top:8px;margin-bottom:4px">Triggers (${data.triggers.length})</div>
-    <div style="background:var(--card2);padding:8px;border-radius:6px;font-size:11px">
-      ${data.triggers.slice(0,3).map(t => `<div style="margin-bottom:4px">⚡ <span style="color:var(--muted)">${safe(t.watch_cap||"")}</span> → <span style="color:var(--blue)">${safe(t.action_cap||"")}</span> ${tag(t.level||"warn", t.level==="crit"?"red":"amber")}</div>`).join("")}
-    </div>` : ""}
-  `;
-  document.getElementById("hw-compose-result").innerHTML = html;
+  // /api/hardware/orchestrate 已删除 — 核心聚焦硬件自动接入
+  alert("Compose/Orchestration 已从 HAK v2.0 内核精简移除。\n核心流程: 发现→握手→注册→读写控制→健康管理。");
 }
 
 async function registerHwCustom() {
@@ -1327,65 +1314,25 @@ async function loadFunnel(refresh=false) {
 }
 async function loadIfEmpty_sales(id) { if (!loaded[id]) { loaded[id]=true; loadFunnel(); } }
 
-// ============ 🦾 外骨骼 ============
+// ============ 🦾 外骨骼 (已精简) ============
 async function loadExo() {
-  const d = await fetchJSON(`/api/exoskeleton/status`);
-  if (!d?.ok) { Object.keys({exo:""}).forEach(k => { const el = document.getElementById(k); if(el) el.innerHTML="❌ API error"; }); return; }
-  
-  const mode = d.mode || "mock";
-  const eh = d.estop_active ? '<span class="tag tag-red">🛑 E-STOP ACTIVE</span>' : '<span class="tag tag-green">✅ 正常</span>';
-  const unstable = d.imu?.unstable;
-  document.getElementById("exo-status").innerHTML = `
-    <div class="grid-kpis" style="grid-template-columns:repeat(2,1fr)">
-      <div class="kpi"><div class="label">运行模式</div><div class="value" style="font-size:18px">${mode.toUpperCase()}</div></div>
-      <div class="kpi"><div class="label">紧急停止</div><div class="value" style="font-size:14px">${eh}</div></div>
-      <div class="kpi"><div class="label">站姿高度</div><div class="value">${d.standing_height_m?.toFixed(3)}m</div></div>
-      <div class="kpi"><div class="label">Hak 设备总数</div><div class="value">${d.total_device_classes || "?"}</div></div>
-    </div>`;
-  
-  // 关节角度 — 迷你 bar chart
-  const joints = d.joint_names || ["hip_l","hip_r","knee_l","knee_r"];
-  const standing = d.mode === "mock" ? [10,10,0,0] : ["?","?","?","?"];
-  const seated = [90,90,90,90];
-  const jointHtml = joints.map((j,i) => {
-    const sDeg = standing[i] ?? 0, seDeg = seated[i] ?? 0;
-    return `<div style="margin-bottom:6px">
-      <div style="font-size:12px;color:var(--muted);display:flex;justify-content:space-between">
-        <span>${j}</span><span>站立 ${sDeg}° / 坐姿 ${seDeg}°</span>
+  // /api/exoskeleton/status 已删除 — HAK v2.0 核心聚焦硬件自动接入
+  const notice = `
+    <div style="padding:16px;background:var(--card2);border-radius:8px;text-align:center">
+      <div style="font-size:16px;margin-bottom:8px;color:var(--amber)">🦾 外骨骼业务模块已精简</div>
+      <div style="font-size:12px;color:var(--muted);line-height:1.7">
+        exoskeleton.py 单业务逻辑已从 HAK v2.0 内核移除。<br>
+        核心目标回归: <strong style="color:var(--blue)">硬件全自动接入</strong><br>
+        → 发现 → 握手 → 注册 → 读写控制 → 健康管理
       </div>
-      <div style="display:flex;gap:2px;margin-top:2px">
-        <div style="flex:${sDeg+1};background:var(--green);height:10px;border-radius:2px"></div>
-        <div style="flex:${Math.max(0,90-sDeg)};background:var(--card2);height:10px;border-radius:2px"></div>
+      <div style="margin-top:12px;font-size:11px;color:var(--muted)">
+        11 种 device_class · 120 skills · DataBus 全局共享
       </div>
     </div>`;
-  }).join("");
-  document.getElementById("exo-joints").innerHTML = jointHtml;
-  
-  // IMU
-  const roll = d.imu?.roll_deg ?? 0, pitch = d.imu?.pitch_deg ?? 0;
-  const alert = unstable ? '<span class="tag tag-red">⚠️ 失衡!</span>' : '<span class="tag tag-green">✅ 稳定</span>';
-  document.getElementById("exo-imu").innerHTML = `
-    <div class="grid-kpis" style="grid-template-columns:repeat(3,1fr)">
-      <div class="kpi"><div class="label">ROLL</div><div class="value">${roll.toFixed(1)}°</div></div>
-      <div class="kpi"><div class="label">PITCH</div><div class="value">${pitch.toFixed(1)}°</div></div>
-      <div class="kpi"><div class="label">平衡状态</div><div class="value" style="font-size:14px">${alert}</div></div>
-    </div>
-    <div style="font-size:11px;color:var(--muted);margin-top:12px">阈值 15° → 触发 E-STOP + 关节零力矩自锁</div>`;
-  
-  // HAK 注册
-  const hak = d.hak_registration || {};
-  const ik = d.ik_sample || {};
-  document.getElementById("exo-hak").innerHTML = `
-    <div style="font-size:13px">
-      <div style="margin-bottom:6px">
-        <span style="color:var(--green)">✅</span> HAK 内核注册成功
-        <span style="color:var(--muted);margin-left:10px">sn=${hak.sn || "?"} class=exoskeleton</span>
-      </div>
-      <div style="margin-bottom:6px"><span style="color:var(--green)">✅</span> SDP-1 握手: PING→DESC→CONFIG→ECHO</div>
-      <div style="margin-bottom:6px"><span style="color:var(--green)">✅</span> Sandbox: 关节限位 + 越界拒绝</div>
-      <div style="margin-bottom:6px"><span style="color:var(--blue)">ℹ️</span> IK 求解 target=${JSON.stringify(ik.target)} → ${JSON.stringify(ik.solution)}</div>
-      <div><span style="color:var(--amber)">💡</span> 安全站立: 10 步渐变 sit→stand, 总耗时 5.0s</div>
-    </div>`;
+  ["exo-status","exo-joints","exo-imu","exo-hak"].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.innerHTML = notice;
+  });
 }
 
 // ============ 🛒 AI 采购 ============
