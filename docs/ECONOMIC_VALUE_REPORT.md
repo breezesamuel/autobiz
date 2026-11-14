@@ -1,5 +1,5 @@
 # 经济价值证明报告（AutoBiz）
-- 生成时间：2026-11-13 23:32 UTC
+- 生成时间：2026-11-14 06:21 UTC
 - 生成方式：全部数字来自本系统 SQLite 实测库 `leads_export.json`，无一虚构
 
 ## 1. 系统资产清单
@@ -16,12 +16,12 @@
 - 运行轮次：1 次；近 5 轮均新增 326 条/轮、间隔 1.0h → 外推 **7824.0 条/24h**
 
 渠道分布：
-- jobicy: 186
-- greenhouse: 181
-- github_bounty: 116
+- jobicy: 187
+- greenhouse: 180
+- github_bounty: 115
 - hn: 113
 - stackoverflow: 100
-- remoteok: 85
+- remoteok: 86
 - arbeitnow: 30
 - remotive: 14
 - himalayas: 1
