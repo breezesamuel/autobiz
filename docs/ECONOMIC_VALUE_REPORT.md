@@ -1,5 +1,5 @@
 # 经济价值证明报告（AutoBiz）
-- 生成时间：2026-11-15 22:49 UTC
+- 生成时间：2026-11-16 06:26 UTC
 - 生成方式：全部数字来自本系统 SQLite 实测库 `leads_export.json`，无一虚构
 
 ## 1. 系统资产清单
@@ -9,27 +9,27 @@
 - AI 文本处理：线索评分引擎 + 提案生成（模板引擎 + LLM 双模）
 
 ## 2. 实测运行数据
-- 累计线索：**827** 条（含预算线索 86 条）
+- 累计线索：**843** 条（含预算线索 86 条）
 - 线索预算总值：**$12,031,848**
-- 短名单：**27** 条（含已出提案 6 条）| 已出提案：**6** 份 （累计生成 6 份草稿）
+- 短名单：**25** 条（含已出提案 6 条）| 已出提案：**6** 份 （累计生成 6 份草稿）
 - 平均评分：30.1 / 100
-- 运行轮次：1 次；近 5 轮均新增 327 条/轮、间隔 1.0h → 外推 **7848.0 条/24h**
+- 运行轮次：1 次；近 5 轮均新增 343 条/轮、间隔 1.0h → 外推 **8232.0 条/24h**
 
 渠道分布：
 - greenhouse: 180
-- jobicy: 169
-- github_bounty: 133
-- hn: 113
+- jobicy: 177
+- github_bounty: 141
+- hn: 114
 - stackoverflow: 100
-- remoteok: 86
+- remoteok: 85
 - arbeitnow: 30
 - remotive: 15
 - himalayas: 1
 
 状态分布：
-- new: 800
+- new: 818
 - proposed: 6
-- shortlisted: 21
+- shortlisted: 19
 
 待授权/异常渠道（如实记录，未伪造数据）：
 - reddit: reddit: Reddit 未认证 JSON 接口已失效(403)，需申请官方 OAuth：403 Client Error: Blocked for url: https://www.reddit.com/r/freelance/search.json?q=hiring&restrict_sr=1&sort=new
